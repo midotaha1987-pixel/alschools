@@ -561,6 +561,12 @@
         @keyframes micPulse{50%{transform:scale(1.06)}}
       }
       .quiz-mic-btn{display:block;margin:12px auto 2px}
+      .voice-mic-btn{display:block;margin:12px auto 2px}
+      .voice-mic-btn.listening{background:var(--coral);color:#fff;box-shadow:0 4px 0 #d14e2f}
+      @media (prefers-reduced-motion: no-preference){.voice-mic-btn.listening{animation:micPulse 1s ease-in-out infinite}}
+      .opt.voice-picked{outline:4px solid var(--coral);outline-offset:2px;border-color:var(--coral);transform:scale(1.05)}
+      .voice-heard{margin-top:8px;font-weight:800;text-align:center;color:var(--brand-dark);min-height:24px;font-size:16px}
+      @media (prefers-color-scheme: dark){.voice-heard{color:var(--brand)}}
 
       /* ===== الاحتفالات ===== */
       #confettiCanvas{position:fixed;inset:0;z-index:400;pointer-events:none}
@@ -6950,6 +6956,139 @@ refreshStars();
     });
   });
 
+  /* ============================================================
+     🎙️ «جاوب بصوتك»: الطفل يقول الإجابة بصوته في التمارين والتحدي
+     والدرس الصوتي — التعرف على الكلام (ar-EG) يسمعها ويطابقها مع
+     اختيارات السؤال بمطابقة عربية ذكية، ثم «يضغط» فعليًا على زر
+     الاختيار المنطوق، فتتحدد النتيجة (صح/غلط + نجمة/شرح) بنفس
+     منطق الضغط باليد بالضبط — مستحيل يتقال «صح» على إجابة غلط.
+     لو الصوت مش واضح أو لا يطابق أي اختيار بوضوح: لا تخمين ولا
+     احتساب — رسالة «مسمعتش كويس، قولها تاني».
+     أسئلة الترتيب والإملاء تبقى بالضغط فقط (بدون زر صوت).
+     ============================================================ */
+  var AR_NUM_WORDS = { "صفر": 0, "واحد": 1, "واحده": 1, "احد": 1, "اتنين": 2, "اثنين": 2, "اثنان": 2, "تلاته": 3, "ثلاثه": 3, "ثلاث": 3, "اربعه": 4, "اربع": 4, "خمسه": 5, "خمس": 5, "سته": 6, "ست": 6, "سبعه": 7, "سبع": 7, "تمانيه": 8, "ثمانيه": 8, "تسعه": 9, "تسع": 9, "عشره": 10, "عشر": 10, "حداشر": 11, "احد عشر": 11, "اتناشر": 12, "اثنا عشر": 12, "تلاتاشر": 13, "ثلاثه عشر": 13, "اربعتاشر": 14, "اربعه عشر": 14, "خمسطاشر": 15, "خمسه عشر": 15, "ستاشر": 16, "سته عشر": 16, "سبعتاشر": 17, "سبعه عشر": 17, "تمانتاشر": 18, "ثمانيه عشر": 18, "تسعتاشر": 19, "تسعه عشر": 19, "عشرين": 20, "تلاتين": 30, "ثلاثين": 30, "اربعين": 40, "خمسين": 50, "ستين": 60, "سبعين": 70, "تمانين": 80, "ثمانين": 80, "تسعين": 90, "ميه": 100, "مايه": 100 };
+  var AR_LETTER_NAMES = { "الف": "ا", "همزه": "ء", "باء": "ب", "تاء": "ت", "ثاء": "ث", "جيم": "ج", "حاء": "ح", "خاء": "خ", "دال": "د", "ذال": "ذ", "راء": "ر", "زاي": "ز", "سين": "س", "شين": "ش", "صاد": "ص", "ضاد": "ض", "طاء": "ط", "ظاء": "ظ", "عين": "ع", "غين": "غ", "فاء": "ف", "قاف": "ق", "كاف": "ك", "لام": "ل", "ميم": "م", "نون": "ن", "هاء": "ه", "واو": "و", "ياء": "ي" };
+  var EN_NUM_WORDS = { zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90, hundred: 100 };
+  var EN_LETTER_NAMES = { ay: "a", bee: "b", cee: "c", see: "c", dee: "d", ee: "e", ef: "f", gee: "g", aitch: "h", eye: "i", jay: "j", kay: "k", el: "l", em: "m", en: "n", oh: "o", pee: "p", cue: "q", ar: "r", ess: "s", tee: "t", you: "u", vee: "v", ex: "x", why: "y", zee: "z", zed: "z" };
+
+  function arTokensToNumber(tokens) {
+    if (!tokens.length) return null;
+    var joined = tokens.join(" ");
+    if (Object.prototype.hasOwnProperty.call(AR_NUM_WORDS, joined)) return AR_NUM_WORDS[joined];
+    if (tokens.length === 1) {
+      if (/^\d+$/.test(tokens[0])) return parseInt(tokens[0], 10);
+      if (Object.prototype.hasOwnProperty.call(AR_NUM_WORDS, tokens[0])) return AR_NUM_WORDS[tokens[0]];
+      return null;
+    }
+    if (tokens.length === 2 && tokens[0] === "و" && typeof AR_NUM_WORDS[tokens[1]] === "number") return AR_NUM_WORDS[tokens[1]];
+    if (tokens.length === 3 && tokens[1] === "و") {
+      var a = AR_NUM_WORDS[tokens[0]], b = AR_NUM_WORDS[tokens[2]];
+      if (typeof a === "number" && typeof b === "number") {
+        if (a < 10 && b >= 20) return a + b;
+        if (b < 10 && a >= 20) return a + b;
+      }
+    }
+    return null;
+  }
+  /* تحويل أي نص (منطوق أو مكتوب على زر) لصورة موحّدة للمقارنة:
+     أرقام عربية/هندية/كلمات أرقام → #رقم، أسماء الحروف → الحرف نفسه،
+     تطبيع الهمزة والألف وإسقاط التشكيل جاهز من normalizeSpeech */
+  function canonTokens(text, en) {
+    var n = normalizeSpeech(text, en);
+    if (!n) return [];
+    var tokens = n.split(" ").filter(Boolean);
+    if (en) {
+      if (tokens.length === 1) {
+        if (/^\d+$/.test(tokens[0])) return ["#" + parseInt(tokens[0], 10)];
+        if (typeof EN_NUM_WORDS[tokens[0]] === "number") return ["#" + EN_NUM_WORDS[tokens[0]]];
+        if (EN_LETTER_NAMES[tokens[0]]) return [EN_LETTER_NAMES[tokens[0]]];
+      }
+      if (tokens.length === 2 && typeof EN_NUM_WORDS[tokens[0]] === "number" && typeof EN_NUM_WORDS[tokens[1]] === "number" && EN_NUM_WORDS[tokens[0]] >= 20 && EN_NUM_WORDS[tokens[1]] < 10) return ["#" + (EN_NUM_WORDS[tokens[0]] + EN_NUM_WORDS[tokens[1]])];
+      return tokens;
+    }
+    var FILLER = { "الاجابه": 1, "اجابه": 1, "اختار": 1, "اخترت": 1, "رقم": 1, "حرف": 1, "الحرف": 1, "هو": 1, "هي": 1 };
+    var core = tokens.filter(function (t) { return !FILLER[t]; });
+    if (core.length) tokens = core;
+    tokens = tokens.map(function (t) { return t.length > 3 && t.indexOf("ال") === 0 ? t.slice(2) : t; });
+    var num = arTokensToNumber(tokens);
+    if (num === null) {
+      /* الواو لازقة في الكلمة اللي بعدها: «خمسة وعشرين» */
+      var splitT = [];
+      tokens.forEach(function (t) {
+        if (t.length > 1 && t.charAt(0) === "و" && typeof AR_NUM_WORDS[t] !== "number" && typeof AR_NUM_WORDS[t.slice(1)] === "number") { splitT.push("و", t.slice(1)); }
+        else splitT.push(t);
+      });
+      num = arTokensToNumber(splitT);
+    }
+    if (num !== null) return ["#" + num];
+    if (tokens.length === 1 && AR_LETTER_NAMES[tokens[0]]) return [AR_LETTER_NAMES[tokens[0]]];
+    return tokens;
+  }
+  function voiceScore(heard, label, en) {
+    var h = canonTokens(heard, en), o = canonTokens(label, en);
+    if (!h.length || !o.length) return 0;
+    if (h.join(" ") === o.join(" ")) return 100;
+    if (o.every(function (t) { return h.indexOf(t) > -1; })) return 92; /* قال الاختيار وسط كلام: «الإجابة خمسة» */
+    if (o.length <= 3 && h.every(function (t) { return o.indexOf(t) > -1; })) return 80; /* نطق مختصر من اختيار قصير */
+    return 0;
+  }
+  /* أفضل اختيار منطوق — لازم يكون واضح ووحيد: أي تعادل أو ضعف = لا اختيار (بدون تخمين) */
+  function bestVoiceMatch(alts, labels, en) {
+    var best = -1, bestScore = 0, secondScore = 0;
+    labels.forEach(function (label, i) {
+      var s = 0;
+      alts.forEach(function (a) { var sc = voiceScore(a, label, en); if (sc > s) s = sc; });
+      if (s > bestScore) { secondScore = bestScore; bestScore = s; best = i; }
+      else if (s > secondScore) { secondScore = s; }
+    });
+    return bestScore >= 80 && bestScore > secondScore ? best : -1;
+  }
+  function voiceSpeak(t) { try { speak(t); } catch (e) {} }
+
+  /* تشغيل الإجابة الصوتية لسؤال اختيارات/صح-غلط:
+     cfg = { btn, status, en, lang, getOpts() -> [{el,label}], stale(), onMatched(target) } */
+  function runVoiceAnswer(cfg) {
+    withMicConsent(function () {
+      var btn = cfg.btn;
+      btn.disabled = true; btn.classList.add("listening"); btn.textContent = "🎙️ بسمعك… قول الإجابة";
+      if (cfg.status) cfg.status.textContent = "🎧 قول الإجابة بصوت عالٍ وواضح…";
+      listenOnce(cfg.lang, function (alts) {
+        btn.disabled = false; btn.classList.remove("listening"); btn.textContent = "🎙️ جاوب بصوتك";
+        if (cfg.stale && cfg.stale()) { if (cfg.status) cfg.status.textContent = ""; return; }
+        var opts = cfg.getOpts();
+        var idx = bestVoiceMatch(alts, opts.map(function (o) { return o.label; }), cfg.en);
+        if (idx === -1 || !opts[idx]) {
+          if (cfg.status) cfg.status.textContent = "🤔 مسمعتش كويس، قولها تاني 🎤";
+          voiceSpeak("مسمعتش كويس يا بطل… قولها تاني بصوت عالٍ وواضح.");
+          return;
+        }
+        var target = opts[idx];
+        if (cfg.status) cfg.status.textContent = "🎧 سمعتك بتقول: «" + (alts[0] || "") + "» — اخترت لك: «" + target.label + "»";
+        target.el.classList.add("voice-picked");
+        try { target.el.scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch (e) {}
+        if (cfg.onMatched) { try { cfg.onMatched(target); } catch (e) {} }
+        setTimeout(function () {
+          target.el.classList.remove("voice-picked");
+          if (document.contains(target.el) && !target.el.disabled) target.el.click();
+        }, 750);
+      }, function (err) {
+        btn.disabled = false; btn.classList.remove("listening"); btn.textContent = "🎙️ جاوب بصوتك";
+        if (cfg.status) cfg.status.textContent =
+          err === "not-allowed" ? "المايك مقفول من المتصفح — ولي الأمر يقدر يفعّله من إعدادات المتصفح، أو جاوب بالضغط 👆" :
+          err === "unsupported" ? "المتصفح ده لا يدعم التعرف على الصوت — جاوب بالضغط على الإجابة 👆" :
+          "🤔 مسمعتش كويس، قولها تاني 🎤";
+        if (err !== "not-allowed" && err !== "unsupported") voiceSpeak("مسمعتش كويس يا بطل… قولها تاني.");
+      });
+    });
+  }
+  function makeVoiceBtn(cls) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "btn " + cls; b.textContent = "🎙️ جاوب بصوتك";
+    var st = document.createElement("div");
+    st.className = "voice-heard"; st.setAttribute("role", "status");
+    return { btn: b, status: st };
+  }
+
   /* أسئلة الدرس الصوتي: تتجاوب بالضغط أو بالصوت */
   var aq = $("audioQuiz");
   function injectQuizMic() {
@@ -6957,31 +7096,123 @@ refreshStars();
     if (aq.querySelector(".order-zone")) return; /* أسئلة الترتيب بالضغط فقط */
     if (!aq.querySelectorAll(".opt").length) return;
     if (aq.querySelector(".quiz-mic-btn")) return;
-    var b = document.createElement("button");
-    b.type = "button"; b.className = "btn quiz-mic-btn"; b.textContent = "🎤 جاوب بصوتك";
-    b.addEventListener("click", function () {
-      withMicConsent(function () {
-        b.disabled = true; b.classList.add("listening"); b.textContent = "🎙️ بسمعك… قول الإجابة";
-        var en = lessonIsEn();
-        listenOnce(en ? "en-US" : "ar-EG", function (alts) {
-          b.disabled = false; b.classList.remove("listening"); b.textContent = "🎤 جاوب بصوتك";
-          var optsNow = aq.querySelectorAll(".opt:not([disabled])");
-          var clicked = false;
-          for (var i = 0; i < optsNow.length && !clicked; i++) {
-            var label = optsNow[i].textContent.trim();
-            if (alts.some(function (a) { return speechMatch(a, label, en); })) { optsNow[i].click(); clicked = true; }
-          }
-          if (!clicked) toast("مسمعتش إجابة من الاختيارات — قرّب وقول الإجابة بصوت عالٍ 🎤");
-        }, function () {
-          b.disabled = false; b.classList.remove("listening"); b.textContent = "🎤 جاوب بصوتك";
-          toast("المايك مش متاح — جاوب بالضغط على الإجابة 👆");
-        });
+    var ui = makeVoiceBtn("quiz-mic-btn");
+    ui.btn.addEventListener("click", function () {
+      var firstOpt = aq.querySelector(".opt");
+      var en = lessonIsEn();
+      runVoiceAnswer({
+        btn: ui.btn, status: ui.status, en: en, lang: en ? "en-US" : "ar-EG",
+        getOpts: function () {
+          return Array.prototype.map.call(aq.querySelectorAll(".opt:not([disabled])"), function (el) { return { el: el, label: el.textContent.trim() }; });
+        },
+        stale: function () { return !firstOpt || !document.contains(firstOpt); }
       });
     });
-    aq.appendChild(b);
+    aq.appendChild(ui.btn); aq.appendChild(ui.status);
   }
   if (aq && "MutationObserver" in window) {
     new MutationObserver(injectQuizMic).observe(aq, { childList: true, subtree: true });
+  }
+
+  /* تمارين الدروس: زر صوت لكل سؤال اختيار/صح-غلط لسه متحلش */
+  var exList = $("exerciseList");
+  function injectExerciseMics() {
+    if (!SR || !exList) return;
+    exList.querySelectorAll(".ex-card").forEach(function (card) {
+      if (card.classList.contains("solved")) {
+        var oldB = card.querySelector(".voice-mic-btn"), oldS = card.querySelector(".voice-heard");
+        if (oldB) oldB.remove();
+        if (oldS) oldS.remove();
+        return;
+      }
+      if (card.querySelector(".voice-mic-btn")) return;
+      if (card.querySelector(".listen-btn")) return; /* الإملاء بالضغط فقط */
+      var optsBox = card.querySelector(".opts");
+      if (!optsBox || optsBox.classList.contains("order-pool")) return; /* الترتيب بالضغط فقط */
+      if (!optsBox.querySelectorAll(".opt:not([disabled])").length) return;
+      var ui = makeVoiceBtn("voice-mic-btn");
+      ui.btn.addEventListener("click", function () {
+        if (card.classList.contains("solved")) return;
+        var en = lessonIsEn();
+        runVoiceAnswer({
+          btn: ui.btn, status: ui.status, en: en, lang: en ? "en-US" : "ar-EG",
+          getOpts: function () {
+            return Array.prototype.map.call(card.querySelectorAll(".opts .opt:not([disabled])"), function (el) { return { el: el, label: el.textContent.trim() }; });
+          },
+          stale: function () { return !document.contains(card) || card.classList.contains("solved"); }
+        });
+      });
+      var fb = card.querySelector(".ex-fb");
+      if (fb) { card.insertBefore(ui.btn, fb); card.insertBefore(ui.status, fb); }
+      else { card.appendChild(ui.btn); card.appendChild(ui.status); }
+    });
+  }
+  if (exList && "MutationObserver" in window) {
+    new MutationObserver(injectExerciseMics).observe(exList, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+    injectExerciseMics();
+  }
+
+  /* تحدي المعلم: زر صوت لأسئلة الاختيار وصح/غلط — مع نطق النتيجة
+     والشرح فورًا (لأن التحدي بينتقل للسؤال اللي بعده على طول) */
+  var chBody = $("challengeBody");
+  function challengeCtx() {
+    try {
+      if (typeof chState === "undefined" || !chState) return null;
+      var q = chSet(chState.subId)[chState.idx];
+      return q ? { q: q, idx: chState.idx } : null;
+    } catch (e) { return null; }
+  }
+  function injectChallengeMic() {
+    if (!SR || !chBody) return;
+    var card = chBody.querySelector(".card");
+    if (!card) return;
+    if (card.querySelector(".voice-mic-btn")) return;
+    if (card.querySelector("#chListen")) return; /* الإملاء بالضغط فقط */
+    var zone = card.querySelector("#chZone");
+    if (zone && !zone.hidden) return; /* الترتيب بالضغط فقط */
+    var optsBox = card.querySelector("#chOpts");
+    if (!optsBox || !optsBox.querySelectorAll(".opt").length) return;
+    var ui = makeVoiceBtn("voice-mic-btn");
+    ui.btn.addEventListener("click", function () {
+      var ctx0 = challengeCtx();
+      var startIdx = ctx0 ? ctx0.idx : -1;
+      var en = false, lang = "ar-EG";
+      try {
+        if (ctx0 && ctx0.q.lang) { lang = ctx0.q.lang; en = lang.indexOf("en") === 0; }
+        else if (chState && /english/.test(chState.subId)) { en = true; lang = "en-US"; }
+      } catch (e) {}
+      runVoiceAnswer({
+        btn: ui.btn, status: ui.status, en: en, lang: lang,
+        getOpts: function () {
+          return Array.prototype.map.call(card.querySelectorAll("#chOpts .opt:not([disabled])"), function (el) { return { el: el, label: el.textContent.trim() }; });
+        },
+        stale: function () {
+          var c = challengeCtx();
+          return !c || c.idx !== startIdx || !document.contains(card);
+        },
+        onMatched: function (t) {
+          var ctx = challengeCtx();
+          if (!ctx) return;
+          var q = ctx.q, correct = false, right = "";
+          if (q.type === "tf") {
+            right = q.a ? "صح" : "غلط";
+            correct = (t.label.indexOf("صح") > -1) === (q.a === true);
+          } else if (q.opts) {
+            right = stripTags(q.opts[q.a]);
+            var pickedCanon = canonTokens(t.label, en).join(" ");
+            correct = canonTokens(right, en).join(" ") === pickedCanon;
+          }
+          if (correct) voiceSpeak("برافو عليك يا بطل! إجابة صحيحة… إنت شاطر!");
+          else voiceSpeak("لأ يا بطل، دي إجابة غلط. الإجابة الصحيحة هي: " + right + ". " + stripTags(q.why || ""));
+        }
+      });
+    });
+    var fbEl = card.querySelector("#chFb");
+    if (fbEl) { card.insertBefore(ui.btn, fbEl); card.insertBefore(ui.status, fbEl); }
+    else { card.appendChild(ui.btn); card.appendChild(ui.status); }
+  }
+  if (chBody && "MutationObserver" in window) {
+    new MutationObserver(injectChallengeMic).observe(chBody, { childList: true, subtree: true });
   }
 
   /* ============================================================
