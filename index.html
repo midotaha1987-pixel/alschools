@@ -7640,5 +7640,304 @@ refreshStars();
   });
 })();
 </script>
+
+<style>
+  /* ===== وحدات الكتاب: بطاقات الوحدات داخل شاشة المادة ===== */
+  .map-wrap.units-mode{gap:14px;padding-top:6px}
+  .map-wrap.units-mode::before{display:none}
+  .unit-card{
+    display:block;width:100%;text-align:right;background:var(--card);color:var(--ink);
+    border:2px solid var(--line);border-radius:22px;padding:16px 18px;font-family:inherit;
+    box-shadow:var(--shadow);cursor:pointer;
+  }
+  .unit-card:hover{border-color:var(--brand)}
+  .unit-top{display:flex;align-items:center;gap:14px}
+  .unit-num{
+    flex:0 0 auto;width:52px;height:52px;border-radius:16px;display:grid;place-items:center;
+    font-size:24px;font-weight:800;color:#fff;
+  }
+  .unit-card h4{margin:0;font-size:21px;font-weight:800}
+  .unit-card .unit-meta{margin:2px 0 0;color:var(--ink-soft);font-weight:700;font-size:15px}
+  .unit-card .unit-state{margin-inline-start:auto;font-weight:800;font-size:16px;color:var(--brand-dark);white-space:nowrap}
+  @media (prefers-color-scheme: dark){.unit-card .unit-state{color:var(--brand)}}
+  .unit-card.all-done .unit-state{color:var(--green)}
+  .units-back{margin-bottom:2px}
+</style>
+
+<script>
+"use strict";
+/* ============================================================
+   📚 تنظيم نفهم: الصف ← المادة ← الوحدة ← الدرس
+   الدروس الحالية نفسها (نفس الـ ID والمحتوى والتمارين والنجوم)
+   مُقسّمة على وحدات/محاور الكتاب الرسمي المصري لكل صف، بنفس
+   ترتيب الكتاب، والتجميع متتابع على نفس ترتيب الدروس الحالي —
+   فخريطة المغامرة وتسلسل القفل/الفتح يفضلان كما هما داخل الوحدات.
+   ============================================================ */
+(function () {
+  if (typeof LESSONS === "undefined" || typeof openSubject !== "function" || typeof openLesson !== "function") return;
+
+  var UNIT_DEFS = {
+    /* ---------- الصف الأول ---------- */
+    "1_arabic": [
+      { name: "المحور الأول: من أكون؟", ids: ["ar1", "ar2", "L03", "L04", "L05", "L06", "L07"] },
+      { name: "المحور الثاني: العالم من حولي", ids: ["L08", "L09", "L10", "L11", "L12", "L13", "L14"] },
+      { name: "المحور الثالث: كيف يعمل العالم؟", ids: ["L15", "L16", "L17", "L18", "L19", "L20", "L21"] },
+      { name: "المحور الرابع: التواصل", ids: ["L22", "L23", "L24", "L25", "L26", "L27", "L28", "ar3", "arRead"] }
+    ],
+    "1_math": [
+      { name: "الوحدة الأولى: الأعداد حتى ١٠٠", ids: ["ma1", "ma4", "ma5"] },
+      { name: "الوحدة الثانية: الجمع والطرح", ids: ["ma2", "ma6", "ma3", "ma7"] },
+      { name: "الوحدة الثالثة: الهندسة والقياس", ids: ["ma8", "ma9"] },
+      { name: "الوحدة الرابعة: الأنماط والنقود والوقت", ids: ["ma10", "ma11", "ma12"] }
+    ],
+    "1_english": [
+      { name: "Unit 1: Hello! — التحيات والحروف", ids: ["en1", "en3"] },
+      { name: "Unit 2: My Family — عائلتي", ids: ["en4"] },
+      { name: "Unit 3: My School Bag — في المدرسة", ids: ["en5", "en2"] },
+      { name: "Unit 4: This Is Me — جسمي", ids: ["en6"] },
+      { name: "Unit 5: Yummy Food — الطعام", ids: ["en7"] },
+      { name: "Unit 6: Animals & Toys — الحيوانات والألعاب", ids: ["en8", "en9"] },
+      { name: "Unit 7: Colors & Numbers — الألوان والأعداد", ids: ["en10", "en11"] }
+    ],
+    /* ---------- الصف الثاني ---------- */
+    "2_arabic": [
+      { name: "المحور الأول: من أكون؟", ids: ["g2ar1", "g2ar2", "g2ar3", "g2ar4"] },
+      { name: "المحور الثاني: العالم من حولي", ids: ["g2ar5", "g2ar6", "g2ar7", "g2ar8"] },
+      { name: "المحور الثالث: كيف يعمل العالم؟", ids: ["g2ar9", "g2ar10"] },
+      { name: "المحور الرابع: التواصل", ids: ["g2ar11", "g2ar12"] }
+    ],
+    "2_math": [
+      { name: "الوحدة الأولى: الأعداد حتى ١٠٠٠", ids: ["g2ma1", "g2ma2"] },
+      { name: "الوحدة الثانية: الجمع والطرح حتى ١٠٠٠", ids: ["g2ma3", "g2ma4"] },
+      { name: "الوحدة الثالثة: الضرب والقسمة", ids: ["g2ma5", "g2ma6", "g2ma7"] },
+      { name: "الوحدة الرابعة: الكسور", ids: ["g2ma8"] },
+      { name: "الوحدة الخامسة: الهندسة والقياس", ids: ["g2ma9", "g2ma10"] },
+      { name: "الوحدة السادسة: النقود والبيانات", ids: ["g2ma11", "g2ma12"] }
+    ],
+    "2_english": [
+      { name: "Unit 1: Hello Again! & Numbers — التحيات والأعداد", ids: ["g2en1", "g2en2"] },
+      { name: "Unit 2: Colors, Shapes & Family — الألوان والأشكال والعائلة", ids: ["g2en3", "g2en4"] },
+      { name: "Unit 3: At School & My Body — المدرسة والجسم", ids: ["g2en5", "g2en6"] },
+      { name: "Unit 4: Animals & Food — الحيوانات والطعام", ids: ["g2en7", "g2en8"] },
+      { name: "Unit 5: I Can…! Days & Weather — الأيام والطقس", ids: ["g2en9", "g2en10"] }
+    ],
+    /* ---------- الصف الثالث ---------- */
+    "3_arabic": [
+      { name: "المحور الأول: من أكون؟", ids: ["g3ar1", "g3ar2", "g3ar3", "g3ar4"] },
+      { name: "المحور الثاني: العالم من حولي", ids: ["g3ar5", "g3ar6", "g3ar7", "g3ar8"] },
+      { name: "المحور الثالث: كيف يعمل العالم؟", ids: ["g3ar9", "g3ar10"] },
+      { name: "المحور الرابع: التواصل", ids: ["g3ar11", "g3ar12"] }
+    ],
+    "3_math": [
+      { name: "الوحدة الأولى: الأعداد حتى ١٠٠ ألف وعملياتها", ids: ["g3ma1", "g3ma2"] },
+      { name: "الوحدة الثانية: الضرب والقسمة", ids: ["g3ma3", "g3ma4"] },
+      { name: "الوحدة الثالثة: الكسور", ids: ["g3ma5", "g3ma6"] },
+      { name: "الوحدة الرابعة: المحيط والمساحة", ids: ["g3ma7", "g3ma8"] },
+      { name: "الوحدة الخامسة: الهندسة والقياس والبيانات", ids: ["g3ma9", "g3ma10", "g3ma11", "g3ma12"] }
+    ],
+    "3_english": [
+      { name: "Unit 1: Welcome Back! & Numbers — أهلًا من جديد والأعداد", ids: ["g3en1", "g3en2"] },
+      { name: "Unit 2: Jobs & My School Day — المهن ويومي في المدرسة", ids: ["g3en3", "g3en4"] },
+      { name: "Unit 3: Health & Wild Animals — الصحة والحيوانات البرية", ids: ["g3en5", "g3en6"] },
+      { name: "Unit 4: Food & Around Town — الطعام وفي المدينة", ids: ["g3en7", "g3en8"] },
+      { name: "Unit 5: Hobbies & Seasons — الهوايات والفصول", ids: ["g3en9", "g3en10"] }
+    ],
+    /* ---------- الصف الرابع ---------- */
+    "4_arabic": [
+      { name: "المحور الأول: أكتشف ذاتي", ids: ["g4ar1", "g4ar2", "g4ar3", "g4ar4", "g4ar5", "g4ar6"] },
+      { name: "المحور الثاني: علاقتي مع الآخرين", ids: ["g4ar7", "g4ar8", "g4ar9", "g4ar10", "g4ar11", "g4ar12"] }
+    ],
+    "4_math": [
+      { name: "الوحدة الأولى: القيمة المكانية", ids: ["g4ma1", "g4ma2"] },
+      { name: "الوحدة الثانية: استراتيجيات عمليتي الجمع والطرح", ids: ["g4ma3"] },
+      { name: "الوحدة الثالثة: عمليتا الضرب والقسمة", ids: ["g4ma4", "g4ma5"] },
+      { name: "الوحدة الرابعة: العوامل والمضاعفات", ids: ["g4ma6"] },
+      { name: "الوحدة الخامسة: الكسور والأعداد العشرية", ids: ["g4ma7", "g4ma8", "g4ma9", "g4ma10"] },
+      { name: "الوحدة السادسة: الهندسة والمساحة والمحيط", ids: ["g4ma11", "g4ma12"] }
+    ],
+    "4_english": [
+      { name: "Unit 1: Countries & Ordinal Numbers — البلاد والأعداد الترتيبية", ids: ["g4en1", "g4en2"] },
+      { name: "Unit 2: Describing People & Telling the Time — وصف الأشخاص والوقت", ids: ["g4en3", "g4en4"] },
+      { name: "Unit 3: My Daily Routine & Food — روتيني اليومي والطعام", ids: ["g4en5", "g4en6"] },
+      { name: "Unit 4: Animals, Habitats & Places — الحيوانات والأماكن", ids: ["g4en7", "g4en8"] },
+      { name: "Unit 5: Free Time & Weather — وقت الفراغ والطقس", ids: ["g4en9", "g4en10"] }
+    ],
+    /* ---------- الصف الخامس ---------- */
+    "5_arabic": [
+      { name: "الوحدة الأولى: النواسخ — كان وإنَّ وأخواتهما", ids: ["g5ar1", "g5ar2"] },
+      { name: "الوحدة الثانية: المفعول المطلق والحال", ids: ["g5ar3", "g5ar4"] },
+      { name: "الوحدة الثالثة: التوابع — النعت والعطف والبدل", ids: ["g5ar5", "g5ar6", "g5ar7"] },
+      { name: "الوحدة الرابعة: الإملاء — الهمزات", ids: ["g5ar8", "g5ar9"] },
+      { name: "الوحدة الخامسة: الأساليب والنصوص والتعبير", ids: ["g5ar10", "g5ar11", "g5ar12"] }
+    ],
+    "5_math": [
+      { name: "الوحدة الأولى: الأعداد العشرية وعملياتها", ids: ["g5ma1", "g5ma2", "g5ma3"] },
+      { name: "الوحدة الثانية: الكسور وعملياتها", ids: ["g5ma4", "g5ma5"] },
+      { name: "الوحدة الثالثة: الجبر — ترتيب العمليات والمعادلات", ids: ["g5ma6", "g5ma7"] },
+      { name: "الوحدة الرابعة: الهندسة والقياس", ids: ["g5ma8", "g5ma9", "g5ma10", "g5ma11"] },
+      { name: "الوحدة الخامسة: النسبة والمتوسط الحسابي", ids: ["g5ma12"] }
+    ],
+    "5_english": [
+      { name: "Unit 1: Present Simple & Jobs — المضارع البسيط والمهن", ids: ["g5en1", "g5en2", "g5en3"] },
+      { name: "Unit 2: Healthy Habits & Comparing — العادات الصحية والمقارنة", ids: ["g5en4", "g5en5"] },
+      { name: "Unit 3: Asking the Way & Past Simple — الاتجاهات والماضي البسيط", ids: ["g5en6", "g5en7", "g5en8"] },
+      { name: "Unit 4: Stories & Our Environment — القصص والبيئة", ids: ["g5en9", "g5en10"] }
+    ],
+    /* ---------- الصف السادس ---------- */
+    "6_arabic": [
+      { name: "الوحدة الأولى: المفعول لأجله والتمييز", ids: ["g6ar1", "g6ar2"] },
+      { name: "الوحدة الثانية: التوابع — التوكيد والبدل", ids: ["g6ar3", "g6ar4"] },
+      { name: "الوحدة الثالثة: النداء والإعراب الشامل", ids: ["g6ar5", "g6ar6", "g6ar7"] },
+      { name: "الوحدة الرابعة: الإملاء والقراءة والتعبير", ids: ["g6ar8", "g6ar9", "g6ar10", "g6ar11"] },
+      { name: "الوحدة الخامسة: المراجعة النهائية", ids: ["g6ar12"] }
+    ],
+    "6_math": [
+      { name: "الوحدة الأولى: الأعداد الصحيحة وعملياتها", ids: ["g6ma1", "g6ma2", "g6ma3"] },
+      { name: "الوحدة الثانية: الأسس والجذور", ids: ["g6ma4"] },
+      { name: "الوحدة الثالثة: النسبة والتناسب", ids: ["g6ma5", "g6ma6", "g6ma7"] },
+      { name: "الوحدة الرابعة: الجبر — المقادير والمعادلات والمتباينات", ids: ["g6ma8", "g6ma9"] },
+      { name: "الوحدة الخامسة: الهندسة — الدائرة والحجوم", ids: ["g6ma10", "g6ma11"] },
+      { name: "الوحدة السادسة: الإحصاء", ids: ["g6ma12"] }
+    ],
+    "6_english": [
+      { name: "Unit 1: Future Plans & Past Simple — خطط المستقبل والماضي", ids: ["g6en1", "g6en2"] },
+      { name: "Unit 2: Stories & Technology — القصص والتكنولوجيا", ids: ["g6en3", "g6en4"] },
+      { name: "Unit 3: Health & Saving Energy — الصحة وتوفير الطاقة", ids: ["g6en5", "g6en6"] },
+      { name: "Unit 4: Travel & Famous Places in Egypt — السفر وأماكن مصر المشهورة", ids: ["g6en7", "g6en8"] },
+      { name: "Unit 5: Sports & Final Revision — الرياضة والمراجعة النهائية", ids: ["g6en9", "g6en10"] }
+    ]
+  };
+
+  function starsOf(l) { return l.exercises.filter(function (ex, i) { return store.stars[l.id + ":" + i]; }).length; }
+  function doneOf(l) { return !!((store.lessonsDone || {})[l.id]) || starsOf(l) === l.exercises.length; }
+  function subjectLessons(subId) { return LESSONS.filter(function (l) { return l.subject === subId && gradeOf(l) === curGrade; }); }
+
+  /* تقسيم دروس المادة الحالية على الوحدات — بترتيب الدروس الحالي نفسه */
+  function unitsFor(subId) {
+    var all = subjectLessons(subId);
+    var defs = UNIT_DEFS[curGrade + "_" + subId];
+    if (!defs) return [{ name: "دروس المادة", lessons: all }];
+    var byId = {};
+    all.forEach(function (l) { byId[l.id] = l; });
+    var used = {}, units = [];
+    defs.forEach(function (d) {
+      var ls = d.ids.map(function (id) { return byId[id]; }).filter(Boolean);
+      ls.sort(function (a, b) { return all.indexOf(a) - all.indexOf(b); });
+      ls.forEach(function (l) { used[l.id] = 1; });
+      if (ls.length) units.push({ name: d.name, lessons: ls });
+    });
+    var rest = all.filter(function (l) { return !used[l.id]; });
+    if (rest.length) units.push({ name: "دروس إضافية", lessons: rest });
+    return units;
+  }
+
+  var returnUnitKey = null, returnUnitIdx = -1;
+
+  function renderUnits(subId) {
+    var list = document.getElementById("lessonList");
+    if (!list) return;
+    var sub = document.getElementById("subjectSub");
+    if (sub) sub.textContent = "الصف " + GRADE_NAMES[curGrade] + " الابتدائي — دروس المادة متقسمة على وحدات الكتاب الرسمي بالترتيب. اختر وحدة وابدأ دروسها.";
+    list.classList.add("units-mode");
+    list.innerHTML = "";
+    var color = currentSubject ? currentSubject.color : "var(--brand)";
+    unitsFor(subId).forEach(function (u, ui) {
+      var doneCount = 0, got = 0, total = 0;
+      u.lessons.forEach(function (l) {
+        if (doneOf(l)) doneCount++;
+        got += starsOf(l); total += l.exercises.length;
+      });
+      var pct = total ? Math.round(got / total * 100) : 0;
+      var allDone = doneCount === u.lessons.length;
+      var card = document.createElement("button");
+      card.type = "button";
+      card.className = "unit-card" + (allDone ? " all-done" : "");
+      card.setAttribute("aria-label", u.name + " — " + u.lessons.length + " دروس");
+      card.innerHTML =
+        '<span class="unit-top">' +
+          '<span class="unit-num" style="background:' + color + '">' + toAr(ui + 1) + "</span>" +
+          "<span><h4>" + u.name + "</h4>" +
+          '<p class="unit-meta">' + toAr(u.lessons.length) + (u.lessons.length === 1 ? " درس" : " دروس") + " • خلّصت " + toAr(doneCount) + " من " + toAr(u.lessons.length) + "</p></span>" +
+          '<span class="unit-state">' + (allDone ? "خلّصتها كلها! 🎉" : doneCount ? "كمّل من حيث وقفت ←" : "ابدأ الوحدة ←") + "</span>" +
+        "</span>" +
+        '<span class="prog"><i style="width:' + pct + '%"></i></span>' +
+        '<span class="prog-txt">نجوم الوحدة: ★ ' + toAr(got) + " من " + toAr(total) + "</span>";
+      card.addEventListener("click", function () { renderUnitLessons(subId, ui); });
+      list.appendChild(card);
+    });
+  }
+
+  function renderUnitLessons(subId, ui) {
+    var list = document.getElementById("lessonList");
+    if (!list) return;
+    var units = unitsFor(subId);
+    var u = units[ui];
+    if (!u) { renderUnits(subId); return; }
+    var sub = document.getElementById("subjectSub");
+    if (sub) sub.textContent = u.name + " — دروسها بالترتيب زي الكتاب: خلّص كل درس عشان يفتح اللي بعده.";
+    list.classList.remove("units-mode");
+    list.innerHTML = "";
+    var back = document.createElement("button");
+    back.type = "button"; back.className = "back-btn units-back"; back.textContent = "→ كل الوحدات";
+    back.addEventListener("click", function () { renderUnits(subId); });
+    list.appendChild(back);
+    /* القفل/الفتح محسوب على تسلسل المادة كله زي ما هو — مش على الوحدة لوحدها */
+    var all = subjectLessons(subId);
+    var openById = {}, prevDone = true;
+    all.forEach(function (l) { openById[l.id] = prevDone; if (!doneOf(l)) prevDone = false; });
+    u.lessons.forEach(function (l) {
+      var gi = all.indexOf(l);
+      var done = doneOf(l), open = openById[l.id], stars = starsOf(l);
+      var st = document.createElement("div");
+      st.className = "station pos-" + (gi % 3) + (done ? " st-done" : open ? " st-open" : " st-locked");
+      st.innerHTML =
+        '<button type="button" class="station-node" aria-label="' + l.title + '">' + (done ? "★" : open ? toAr(gi + 1) : "🔒") + "</button>" +
+        '<div class="station-info"><h4>' + l.title + "</h4><p>" + l.sub + "</p>" +
+        '<p class="station-state">' + (done
+          ? "خلّصته! ★ " + toAr(stars) + "/" + toAr(l.exercises.length)
+          : open
+            ? (stars ? "كمّل المغامرة! جمعت ★ " + toAr(stars) + " من " + toAr(l.exercises.length) : "محطتك الجاية — يلا نبدأ!")
+            : "🔒 بتفتح لما تخلّص الدرس اللي قبلها") + "</p></div>";
+      var node = st.querySelector(".station-node");
+      node.addEventListener("click", function () {
+        if (!open) { toast("🔒 الدرس ده مقفول — خلّص الدرس اللي قبله الأول يا بطل!"); return; }
+        openLesson(l.id);
+      });
+      st.querySelector(".station-info").addEventListener("click", function () { node.click(); });
+      list.appendChild(st);
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  /* فتح درس: نتذكّر وحدته عشان زر الرجوع من الدرس يرجّع لنفس الوحدة */
+  var _openLesson = openLesson;
+  openLesson = function (id) {
+    try {
+      var l = LESSONS.find(function (x) { return x.id === id; });
+      if (l) {
+        var us = unitsFor(l.subject);
+        for (var i = 0; i < us.length; i++) {
+          if (us[i].lessons.indexOf(l) > -1) { returnUnitKey = curGrade + "_" + l.subject; returnUnitIdx = i; break; }
+        }
+      }
+    } catch (e) {}
+    _openLesson(id);
+  };
+
+  /* شاشة المادة: وحدات أولًا — والضغط على وحدة يفتح دروسها */
+  var _openSubject = openSubject;
+  openSubject = function (subId) {
+    _openSubject(subId);
+    var key = curGrade + "_" + subId;
+    if (returnUnitKey === key && returnUnitIdx >= 0) {
+      var ui = returnUnitIdx;
+      returnUnitKey = null; returnUnitIdx = -1;
+      renderUnitLessons(subId, ui);
+    } else {
+      renderUnits(subId);
+    }
+  };
+})();
+</script>
 </body>
 </html>
