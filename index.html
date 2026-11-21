@@ -429,6 +429,8 @@
         padding:12px 16px;padding-inline-end:46px;font-size:16px;font-weight:600;margin:14px 0;line-height:1.8;
       }
       @media (prefers-color-scheme: dark){.voice-note{background:#2e2408}}
+      .voice-pick-row{display:flex;gap:9px;flex-wrap:wrap;align-items:stretch}
+      .voice-select{flex:1 1 260px;padding:10px 14px;border:2px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);font-family:inherit;font-weight:700;font-size:16.5px}
       .voice-bar{
         display:flex;flex-wrap:wrap;gap:9px;align-items:center;background:var(--card);
         border:2px solid var(--brand);border-radius:20px;padding:12px 14px;margin:14px 0;box-shadow:var(--shadow);
@@ -830,6 +832,22 @@
           <h3 style="margin:0 0 8px">🔊 إعدادات صوت المعلم</h3>
           <p style="margin:0 0 12px">لما «القراءة التلقائية» تكون شغّالة، مستر سكولز هيقرأ بصوته خطوات كل درس وأسئلة التمارين والتحدي وردود الشات أول ما تظهر. والتغذية الراجعة — الإجابة الصح والغلط وشرح السبب والمدح — بتتقال بصوته دايمًا في كل الأحوال.</p>
           <button class="btn" type="button" id="autoReadBtn">🔇 القراءة التلقائية: مقفولة</button>
+          <h4 style="margin:16px 0 6px">🎙️ صوت المعلم</h4>
+          <p style="margin:0 0 10px">اختاروا صوت المعلم: «مدرّس مصري» أو «مدرّسة مصرية» بيختار تلقائيًا أفضل صوت عربي مصري (ar-EG) موجود على جهازكم، ولو حابين صوت بعينه اختاروه بنفسكم من قائمة الأصوات العربية المتاحة على الجهاز.</p>
+          <div class="voice-pick-row">
+            <select class="voice-select" id="teacherVoiceSel" aria-label="صوت المعلم">
+              <option value="auto">تلقائي — أفضل صوت عربي مصري على الجهاز</option>
+              <option value="male">👨‍🏫 مدرّس مصري</option>
+              <option value="female">👩‍🏫 مدرّسة مصرية</option>
+            </select>
+            <button class="btn ghost" type="button" id="testVoiceBtn">🔊 جرّب الصوت</button>
+          </div>
+          <div class="voice-note" id="noEgVoiceNote" hidden>
+            <b>💡 عشان صوت المعلم يبقى مصري بجد:</b> جهازكم لسه مفيهوش صوت عربي مصري (ar-EG) مثبّت، فالمعلم هيستخدم أقرب صوت عربي متاح مؤقتًا.
+            لتنزيل الصوت المصري — في أندرويد: الإعدادات ← النظام ← اللغات والإدخال ← تحويل النص إلى كلام ← محرك Google ← تثبيت البيانات الصوتية ← العربية (مصر).
+            وفي آيفون: الإعدادات ← إمكانية الوصول ← المحتوى المنطوق ← الأصوات ← العربية ← اختاروا صوت مصر وحمّلوه.
+            وبعد التنزيل ارجعوا هنا واختاروه من قائمة «صوت المعلم».
+          </div>
         </div>
         <div class="card" style="margin-top:14px">
           <h3 style="margin:0 0 8px">📚 المحتوى والمنهج</h3>
@@ -2234,9 +2252,15 @@ function toast(msg){
 function speak(text, lang){
   try {
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = lang || "ar-EG"; u.rate = 0.82;
-    const vs = speechSynthesis.getVoices();
-    const v = vs.find(v => v.lang && v.lang.toLowerCase().startsWith((lang || "ar").slice(0,2)));
+    u.lang = lang || "ar-EG"; u.rate = 0.92; u.pitch = 1.05;
+    let v = null;
+    try { if (window.__pickTeacherVoice) v = window.__pickTeacherVoice(u.lang); } catch(e){}
+    if (!v) {
+      const vs = speechSynthesis.getVoices();
+      v = vs.find(v => v.lang && v.lang.toLowerCase().replace("_","-").startsWith("ar-eg"))
+        || vs.find(v => /egypt|مصر/i.test(v.name || ""))
+        || vs.find(v => v.lang && v.lang.toLowerCase().startsWith((lang || "ar").slice(0,2)));
+    }
     if (v) u.voice = v;
     speechSynthesis.cancel(); speechSynthesis.speak(u);
   } catch(e){}
@@ -2385,7 +2409,7 @@ function animateWrite(scope, force){
 }
 
 /* ================= التمارين ================= */
-const PRAISE = ["برافو عليك يا بطل! 🎉","ممتاز! إجابة صحيحة ⭐","رائع! إنت شاطر جدًا 👏","صح الصح! كمل كده يا نجم 🌟"];
+const PRAISE = ["برافو عليك يا بطل! 🎉","شاطر! إجابة صحيحة… كمّل كده يا نجم ⭐","برافو عليك! إنت بطل 👏","صح الصح يا بطل! 🌟","ممتاز! إجابة صحيحة… أنا فخور بيك 💪"];
 function renderExercises(){
   const zone = document.getElementById("exerciseList"); zone.innerHTML = "";
   [1,2,3].forEach(lv => {
@@ -2962,13 +2986,76 @@ refreshStars();
     }, 150);
   }
 
-  /* ---------- اختيار أفضل صوت: مصري أولًا ثم أي عربي ---------- */
+  /* ---------- اختيار أفضل صوت: مصري (ar-EG) أولًا دائمًا، ثم السعودي (ar-SA)، ويفضَّل Google ---------- */
+  function getVoicePref() {
+    try {
+      if (typeof store === "object" && store && store.teacherVoice) return store.teacherVoice;
+    } catch (e) {}
+    return { mode: "auto" };
+  }
+  function setVoicePref(p) {
+    try {
+      if (typeof store === "object" && store) { store.teacherVoice = p; save(); }
+    } catch (e) {}
+  }
+  /* تخمين جنس الصوت من اسمه (أسماء الأصوات العربية المعروفة + كلمات دالة) */
+  var FEMALE_HINTS = ["salma", "سلمى", "amira", "أميرة", "laila", "layla", "ليلى", "zariyah", "زارية", "fatima", "فاطمة", "aisha", "عائشة", "nour", "نور", "hoda", "هدى", "mariam", "مريم", "female", "أنثى", "انثى", "woman"];
+  var MALE_HINTS = ["shakir", "شاكر", "hamed", "حامد", "hamdan", "حمدان", "ahmed", "أحمد", "mohamed", "mohammad", "muhammad", "محمد", "tarek", "طارق", "khalid", "خالد", "omar", "عمر", "karim", "كريم", "youssef", "يوسف", "male", "ذكر", "رجل"];
+  function voiceGender(v) {
+    var n = (v.name || "").toLowerCase();
+    for (var i = 0; i < FEMALE_HINTS.length; i++) if (n.indexOf(FEMALE_HINTS[i]) > -1) return "f";
+    for (var j = 0; j < MALE_HINTS.length; j++) if (n.indexOf(MALE_HINTS[j]) > -1) return "m";
+    return "";
+  }
+  function isEgVoice(v) {
+    var l = (v.lang || "").toLowerCase().replace("_", "-");
+    var n = (v.name || "").toLowerCase();
+    return l.indexOf("ar-eg") === 0 || /egypt|مصر/.test(n);
+  }
+  function arScore(v) {
+    var l = (v.lang || "").toLowerCase().replace("_", "-");
+    var n = (v.name || "").toLowerCase();
+    var s = 0;
+    if (l.indexOf("ar-eg") === 0) s += 120;                                   /* مصري أولًا */
+    else if (l.indexOf("ar") === 0 && /egypt|مصر/.test(n)) s += 110;          /* اسمه مصر */
+    else if (l.indexOf("ar-sa") === 0) s += 70;                               /* سعودي بديل */
+    else if (l.indexOf("ar") === 0) s += 50;                                  /* أي عربي */
+    if (/google/.test(n)) s += 15;                                            /* أصوات Google أوضح */
+    if (v.localService) s += 3;
+    return s;
+  }
+  function arabicVoices() {
+    if (!synth) return [];
+    var vs = [];
+    try { vs = synth.getVoices() || []; } catch (e) {}
+    return vs.filter(function (v) {
+      return (v.lang || "").toLowerCase().indexOf("ar") === 0 || /arab|عرب/.test((v.name || "").toLowerCase());
+    }).sort(function (a, b) { return arScore(b) - arScore(a); });
+  }
   function pickVoice(lang) {
     if (!synth) return null;
     var vs = [];
     try { vs = synth.getVoices() || []; } catch (e) {}
     if (!vs.length) return null;
     var want = (lang || "ar-EG").toLowerCase().replace("_", "-");
+    if (want.indexOf("ar") === 0) {
+      var pref = getVoicePref();
+      if (pref.mode === "uri" && pref.uri) {
+        var chosen = null;
+        vs.forEach(function (v) { if (v.voiceURI === pref.uri) chosen = v; });
+        if (chosen) return chosen;
+      }
+      var ars = arabicVoices();
+      if (!ars.length) return null;
+      if (pref.mode === "male" || pref.mode === "female") {
+        var g = pref.mode === "male" ? "m" : "f";
+        var eg = ars.filter(function (v) { return voiceGender(v) === g && isEgVoice(v); });
+        if (eg.length) return eg[0];
+        var anyG = ars.filter(function (v) { return voiceGender(v) === g; });
+        if (anyG.length) return anyG[0];
+      }
+      return ars[0];
+    }
     var short = want.slice(0, 2);
     var best = null, bs = -1;
     vs.forEach(function (v) {
@@ -2976,19 +3063,20 @@ refreshStars();
       var n = (v.name || "").toLowerCase();
       var s = 0;
       if (l === want) s += 100; else if (l.indexOf(short) === 0) s += 60;
-      if (/arab|عرب/.test(n)) s += 25;
-      if (/egypt|مصر/.test(n)) s += 20;
+      if (/google/.test(n)) s += 10;
       if (v.localService) s += 5;
       if (s > bs) { bs = s; best = v; }
     });
     return bs > 0 ? best : null;
   }
+  try { window.__pickTeacherVoice = pickVoice; } catch (e) {}
   function hasArabicVoice() {
     if (!synth) return false;
     var vs = [];
     try { vs = synth.getVoices() || []; } catch (e) {}
     return vs.some(function (v) { return (v.lang || "").toLowerCase().indexOf("ar") === 0; });
   }
+  function hasEgVoice() { return arabicVoices().some(isEgVoice); }
   function checkVoiceNote() {
     var note = document.getElementById("voiceNote");
     if (!note) return;
@@ -2998,8 +3086,62 @@ refreshStars();
     if (vs.length && !hasArabicVoice()) note.hidden = false;
     else if (hasArabicVoice()) note.hidden = true;
   }
-  if (synth) { try { synth.onvoiceschanged = checkVoiceNote; } catch (e) {} }
-  setTimeout(checkVoiceNote, 1500);
+  /* ---------- قائمة «صوت المعلم» في ركن ولي الأمر + تنبيه غياب الصوت المصري ---------- */
+  function buildVoiceOptions() {
+    var sel = document.getElementById("teacherVoiceSel");
+    if (!sel) return;
+    var pref = getVoicePref();
+    var cur = pref.mode === "uri" ? ("uri:" + (pref.uri || "")) : (pref.mode || "auto");
+    sel.innerHTML = "";
+    [["auto", "تلقائي — أفضل صوت عربي مصري على الجهاز"],
+     ["male", "👨‍🏫 مدرّس مصري"],
+     ["female", "👩‍🏫 مدرّسة مصرية"]].forEach(function (o) {
+      var op = document.createElement("option");
+      op.value = o[0]; op.textContent = o[1];
+      sel.appendChild(op);
+    });
+    var ars = arabicVoices();
+    if (ars.length) {
+      var grp = document.createElement("optgroup");
+      grp.label = "أصوات عربية على جهازك";
+      ars.forEach(function (v) {
+        var op = document.createElement("option");
+        op.value = "uri:" + v.voiceURI;
+        op.textContent = v.name + " (" + (v.lang || "") + ")";
+        grp.appendChild(op);
+      });
+      sel.appendChild(grp);
+    }
+    sel.value = cur;
+    if (sel.value !== cur) sel.value = "auto";
+  }
+  function refreshVoiceUI() {
+    checkVoiceNote();
+    buildVoiceOptions();
+    var note = document.getElementById("noEgVoiceNote");
+    if (note) {
+      if (!synth) note.hidden = false;
+      else {
+        var vs = [];
+        try { vs = synth.getVoices() || []; } catch (e) {}
+        if (vs.length) note.hidden = hasEgVoice();
+      }
+    }
+  }
+  var voiceSelEl = document.getElementById("teacherVoiceSel");
+  if (voiceSelEl) voiceSelEl.addEventListener("change", function () {
+    var val = voiceSelEl.value;
+    if (val.indexOf("uri:") === 0) setVoicePref({ mode: "uri", uri: val.slice(4) });
+    else setVoicePref({ mode: val });
+    say("أهلًا بيك يا بطل! أنا مستر سكولز… يلا بينا نتعلّم ونلعب!");
+  });
+  var testVoiceBtn = document.getElementById("testVoiceBtn");
+  if (testVoiceBtn) testVoiceBtn.addEventListener("click", function () {
+    say("أهلًا أهلًا يا بطل! أنا مستر سكولز… ركّز معايا، ويلا بينا نتعلّم!");
+  });
+  if (synth) { try { synth.onvoiceschanged = refreshVoiceUI; } catch (e) {} }
+  setTimeout(refreshVoiceUI, 1500);
+  setTimeout(refreshVoiceUI, 4000);
   var noteClose = document.getElementById("voiceNoteClose");
   if (noteClose) noteClose.addEventListener("click", function () {
     document.getElementById("voiceNote").hidden = true;
@@ -3072,8 +3214,8 @@ refreshStars();
       var words = text.split(/\s+/).filter(Boolean);
       var u = new SpeechSynthesisUtterance(text);
       u.lang = lang || "ar-EG";
-      u.rate = (lang && lang.indexOf("en") === 0) ? 0.85 : 0.8; /* بطيء ومناسب لعمر ٦ سنين */
-      u.pitch = 1.05;
+      u.rate = (lang && lang.indexOf("en") === 0) ? 0.9 : 0.92; /* إيقاع طبيعي دافئ — زي مدرّس مصري حقيقي بيكلّم طفل */
+      u.pitch = 1.05; /* نبرة دافئة */
       var v = pickVoice(u.lang);
       if (v) u.voice = v;
       var perWord = Math.max(300, 60000 / (88 * u.rate));
@@ -3194,7 +3336,7 @@ refreshStars();
   bind("btnRepeatSaid", function () {
     var fb = document.getElementById("repeatFb");
     fb.textContent = "🎉 برافو عليك يا بطل! قولتها بصوت عالٍ زي الشطار!";
-    say("برافو عليك يا بطل! قولتها صح.");
+    say("برافو عليك يا بطل! قولتها صح… زي الشطار بالظبط!");
     try { awardStar(curLesson.id + ":repeat:" + curStep, document.getElementById("repeatCard")); } catch (e) {}
   });
   /* تحديث جملة «قول ورايا» مع كل خطوة جديدة */
@@ -3216,7 +3358,7 @@ refreshStars();
           b.textContent = "🔊 اسمع السؤال";
           b.addEventListener("click", function () {
             var txt;
-            if (ex.type === "dict" && ex.word) txt = "اسمع الكلمة واختر كتابتها الصحيحة: " + ex.word;
+            if (ex.type === "dict" && ex.word) txt = "ركّز معايا… اسمع الكلمة واختار كتابتها الصحيحة: " + ex.word;
             else if (ex.type === "order" && ex.parts) txt = cleanText(ex.q) + " — رتّب: " + ex.parts.join("، ");
             else if (ex.type === "tf") txt = cleanText(ex.q) + " — صح ولا غلط؟";
             else txt = cleanText(ex.q) + (ex.opts ? " — الاختيارات: " + ex.opts.map(function (o) { return cleanText(o); }).join("، ") : "");
@@ -3306,14 +3448,14 @@ refreshStars();
             zone.appendChild(s);
             if (picked.length === ex.parts.length) {
               var ok = picked.every(function (pp, i) { return pp.i === i; });
-              if (ok) { fb.textContent = "🎉 صح! برافو عليك!"; say("برافو! إجابة صحيحة."); }
-              else { fb.textContent = "قريب! الإجابة الصح: " + ex.parts.join(" "); say("قريب! الإجابة الصحيحة هي: " + ex.parts.join(" ")); }
+              if (ok) { fb.textContent = "🎉 صح! برافو عليك!"; say("برافو عليك يا بطل! رتّبتها صح… شاطر!"); }
+              else { fb.textContent = "قريب! الإجابة الصح: " + ex.parts.join(" "); say("قريب يا بطل! متزعلش… الإجابة الصحيحة هي: " + ex.parts.join(" ")); }
               praiseAndGo();
             }
           });
           optsBox.appendChild(b);
         });
-        speakKaraoke("سؤال سريع: " + cleanText(ex.q), null, undefined);
+        speakKaraoke("يلا يا بطل… سؤال سريع! ركّز معايا: " + cleanText(ex.q), null, undefined);
         return;
       }
       var options = [];
@@ -3333,17 +3475,17 @@ refreshStars();
           if (btn) btn.classList.add("right");
           fb.textContent = "🎉 برافو! إجابة صحيحة!";
           try { awardStar(curLesson.id + ":audio:" + AL.stepIdx, fb); } catch (e) {}
-          say("برافو عليك! إجابة صحيحة.");
+          say("برافو عليك يا بطل! إجابة صحيحة… إنت شاطر!");
           praiseAndGo();
         } else {
           if (btn) { btn.classList.add("wrong"); btn.disabled = true; }
           if (tries >= 2) {
             fb.textContent = "الإجابة الصح: " + rightLabel() + " — " + ex.why;
-            say("الإجابة الصحيحة هي: " + rightLabel());
+            say("ولا يهمك يا بطل… الإجابة الصحيحة هي: " + rightLabel() + ". المرة الجاية هتجيبها!");
             praiseAndGo();
           } else {
             fb.textContent = "قريب! فكّر تاني وحاول مرة كمان — إنت تقدر!";
-            say("قريب! حاول مرة كمان.");
+            say("قريب قوي يا بطل! جرّب تاني… إنت تقدر!");
           }
         }
       }
@@ -3354,8 +3496,8 @@ refreshStars();
         optsBox.appendChild(b);
       });
       var speakTxt = (ex.type === "dict" && ex.word)
-        ? "سؤال سريع. اسمع الكلمة واختر: " + ex.word
-        : "سؤال سريع: " + cleanText(ex.q);
+        ? "يلا يا بطل… سؤال سريع! اسمع الكلمة كويس واختار: " + ex.word
+        : "يلا يا بطل… سؤال سريع! ركّز معايا: " + cleanText(ex.q);
       speakKaraoke(speakTxt, null, ex.lang || (ex.en ? "en-US" : undefined));
     });
   }
@@ -3375,7 +3517,7 @@ refreshStars();
     var dots = document.getElementById("audioDots");
     dots.innerHTML = "";
     lesson.steps.forEach(function () { dots.appendChild(document.createElement("i")); });
-    await say("أهلًا بيك يا بطل! أنا مستر سكولز، وده الدرس الصوتي. اسمعني كويس وقول ورايا.");
+    await say("أهلًا أهلًا يا بطل! أنا مستر سكولز… يلا بينا نبدأ الدرس الصوتي! ركّز معايا كويس، وقول ورايا.");
     for (var i = fromIdx || 0; i < lesson.steps.length; i++) {
       if (tok !== AL.token) return;
       AL.stepIdx = i;
@@ -3400,7 +3542,7 @@ refreshStars();
     if (tok !== AL.token) return;
     document.getElementById("audioText").textContent = "🎉 خلصنا الدرس الصوتي كله! إنت بطل — دلوقتي روّح العب التمارين واجمع النجوم.";
     document.getElementById("audioQuiz").innerHTML = "";
-    await say("برافو عليك يا بطل! خلصنا الدرس الصوتي كله. دلوقتي روّح العب التمارين واجمع النجوم.");
+    await say("برافو عليك يا بطل! شاطر… خلّصنا الدرس الصوتي كله! دلوقتي روّح العب التمارين، واجمع النجوم.");
     AL.running = false;
   }
   bind("btnAudioLesson", function () { runAudioLesson(0); });
@@ -3816,7 +3958,7 @@ refreshStars();
         } else {
           if (fb) fb.textContent = "قريب جدًا يا بطل! سمعتك بتقول: «" + (alts[0] || "…") + "» — اسمع الجملة تاني وقولها ورايا مرة كمان، إنت تقدر 💪";
           setMood("think", 2200);
-          try { speak("قريب جدًا! اسمعها تاني وقولها ورايا.", en ? "en-US" : undefined); } catch (e) {}
+          try { speak("قريب قوي يا بطل! اسمعها تاني… وقولها ورايا.", en ? "en-US" : undefined); } catch (e) {}
         }
       }, function (err) {
         micBtn.disabled = false; micBtn.classList.remove("listening"); micBtn.textContent = "🎤 قولها بصوتك";
@@ -3988,7 +4130,7 @@ refreshStars();
     store.autoRead = !store.autoRead;
     save(); renderToggle();
     toast(store.autoRead ? "🔊 القراءة التلقائية اشتغلت — المعلم هيقرأ كل جديد بصوته" : "🔇 القراءة التلقائية اتقفلت");
-    if (store.autoRead) speakText("أهلًا! من دلوقتي هقرأ لك كل درس وسؤال بصوتي.");
+    if (store.autoRead) speakText("أهلًا يا بطل! من دلوقتي هقرأ لك كل درس وسؤال بصوتي… يلا بينا نتعلّم!");
   });
 
   /* ---------- خطوات الدرس: قراءة تلقائية عند عرض الخطوة ---------- */
