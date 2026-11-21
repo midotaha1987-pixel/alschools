@@ -1,4 +1,4 @@
-const CACHE = 'lskwlz-v10';
+const CACHE = 'lskwlz-v11';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -8,10 +8,25 @@ self.addEventListener('activate', (e) => {
 });
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+  const isHTML = e.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/' || url.pathname.endsWith('/');
+  if (isHTML && url.origin === self.location.origin) {
+    // network-first for pages: user always sees the newest version; cache only as offline fallback
+    e.respondWith(
+      fetch(e.request).then((res) => {
+        if (res && res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, copy));
+        }
+        return res;
+      }).catch(() => caches.match(e.request, { ignoreSearch: true }))
+    );
+    return;
+  }
   e.respondWith(
     caches.match(e.request, { ignoreSearch: true }).then((hit) => {
       const net = fetch(e.request).then((res) => {
-        if (res && res.ok && new URL(e.request.url).origin === self.location.origin) {
+        if (res && res.ok && url.origin === self.location.origin) {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(e.request, copy));
         }
