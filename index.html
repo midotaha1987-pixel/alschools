@@ -333,6 +333,12 @@
         .stars-pill{padding:3px 10px;font-size:17px}
       }
       footer{padding:34px 0 44px;text-align:center;color:var(--ink-soft);font-weight:700;font-size:16px}
+      .foot-links{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+      .foot-link{background:none;border:none;color:var(--brand-dark);font-family:inherit;font-weight:800;font-size:16.5px;padding:8px 14px;text-decoration:underline;text-underline-offset:5px;border-radius:12px}
+      @media (prefers-color-scheme: dark){.foot-link{color:var(--brand)}}
+      .info-card{margin-top:14px}
+      .info-card p{margin:0 0 10px}
+      .info-card p:last-child{margin-bottom:0}
       .view-head{display:flex;align-items:center;gap:12px;padding:20px 0 6px;flex-wrap:wrap}
       .view-head h2{margin:0;font-size:clamp(26px,5vw,34px);font-weight:800}
       [hidden]{display:none !important}
@@ -844,6 +850,93 @@
           <span class="ad-note">مساحة إعلانية مخصصة لأولياء الأمور — بعيدًا تمامًا عن شاشات الأطفال</span>
         </div>
       </section>
+
+      <!-- ================= سياسة الخصوصية ================= -->
+      <section id="view-privacy" hidden>
+        <div class="view-head">
+          <button class="back-btn" type="button" data-back-home>→ رجوع</button>
+          <h2>🔒 سياسة الخصوصية</h2>
+        </div>
+        <p class="sec-sub">خصوصية أطفالكم عندنا خط أحمر. الصفحة دي مكتوبة بلغة بسيطة وواضحة عشان كل أب وأم يعرفوا بالظبط إيه اللي بيحصل — من غير كلام قانوني معقّد.</p>
+        <div class="card info-card">
+          <h3 style="margin:0 0 8px">🚫 لا نجمع أي بيانات شخصية من الأطفال</h3>
+          <p>الاسكولز لا يطلب من الطفل اسمه الحقيقي ولا عمره ولا صورته ولا أي بيانات شخصية، ولا توجد حسابات ولا تسجيل دخول ولا نماذج لجمع البيانات. «اسم البطل» الذي يكتبه الطفل اسم مستعار للعب فقط، ولا يخرج من جهازه أبدًا.</p>
+        </div>
+        <div class="card info-card">
+          <h3 style="margin:0 0 8px">📱 كل التقدم محفوظ على جهاز طفلكم فقط</h3>
+          <p>النجوم والدروس المنجزة والشارات وإعدادات الصوت تُحفظ داخل متصفح جهازكم فقط، ولا تُرسل إلينا ولا إلى أي خادم، ولا نستطيع نحن أو غيرنا الاطّلاع عليها. وإذا مسحتم بيانات المتصفح تتمسح معها نهائيًا.</p>
+        </div>
+        <div class="card info-card">
+          <h3 style="margin:0 0 8px">🎤 صوت الطفل في «قولها بصوتك»</h3>
+          <p>خاصية «قولها بصوتك» لا تعمل إلا بعد موافقة ولي الأمر من ركن ولي الأمر. صوت الطفل يُستخدم للتعرف على نطقه في اللحظة نفسها فقط، عبر خدمة التعرف على الصوت الموجودة في المتصفح نفسه (في متصفح كروم تُعالج بواسطة جوجل). الموقع نفسه لا يُسجّل الصوت ولا يحفظه ولا يرسله إلى أي مكان، ولا تبقى عندنا أي نسخة منه.</p>
+        </div>
+        <div class="card info-card">
+          <h3 style="margin:0 0 8px">👥 لا تواصل مع غرباء</h3>
+          <p>لا توجد في الاسكولز محادثات مع أشخاص حقيقيين، ولا تعليقات، ولا روابط اجتماعية. «مستر سكولز» برنامج تعليمي يجيب من دروس المنهج فقط، والطفل لا يستطيع التواصل مع أي شخص غريب من داخل الموقع.</p>
+        </div>
+        <div class="card info-card">
+          <h3 style="margin:0 0 8px">📢 الإعلانات</h3>
+          <p>لا توجد أي إعلانات داخل الدروس أو التمارين أو التحدي أو الشات أو الدرس الصوتي. توجد مساحتان إعلانيتان فقط في أماكن الكبار: واحدة في ركن ولي الأمر وواحدة في أسفل الصفحة الرئيسية. عند تفعيل الإعلانات عبر Google AdSense، قد تستخدم جوجل وشركاؤها ملفات تعريف الارتباط (Cookies) لعرض إعلانات بناءً على زيارات سابقة لهذا الموقع أو لمواقع أخرى، ويمكنكم إدارة ذلك من إعدادات إعلانات جوجل. ولا نعرض أبدًا إعلانات مراهنات أو كازينو أو محتوى غير مناسب للأطفال والعائلات.</p>
+        </div>
+        <div class="card info-card">
+          <h3 style="margin:0 0 8px">✉️ عندكم سؤال عن الخصوصية؟</h3>
+          <p>يسعدنا نسمعكم في أي وقت من صفحة <button class="foot-link" type="button" data-open-info="view-contact" style="padding:0;min-height:0">تواصل معنا</button> — التواصل مخصص لأولياء الأمور والمعلمين.</p>
+        </div>
+      </section>
+
+      <!-- ================= عن الاسكولز ================= -->
+      <section id="view-about" hidden>
+        <div class="view-head">
+          <button class="back-btn" type="button" data-back-home>→ رجوع</button>
+          <h2>📚 عن الاسكولز</h2>
+        </div>
+        <p class="sec-sub">منصة تعليمية مجانية تمامًا، هدفها إن طفل المرحلة الابتدائية في مصر يحب المذاكرة ويتعلّم وهو بيلعب.</p>
+        <div class="card info-card">
+          <h3 style="margin:0 0 8px">🎯 إحنا بنعمل إيه؟</h3>
+          <p>الاسكولز بيشرح مناهج مصر للمرحلة الابتدائية درس درس، بطريقة ممتعة: قصة قصيرة في أول كل درس، وشرح بسيط خطوة بخطوة، وتمارين تفاعلية بتتصحّح في لحظتها، ونجوم وشارات وخريطة مغامرة بتخلي الطفل عايز يكمّل.</p>
+        </div>
+        <div class="card info-card">
+          <h3 style="margin:0 0 8px">📖 المحتوى والمنهج</h3>
+          <p>جاهز الآن منهج الصف الأول الابتدائي كاملًا — ٥٣ درسًا: في اللغة العربية كل الحروف الهجائية الـ٢٨ بالطريقة المقطعية ثم تكوين الكلمات وقراءة الجمل، وفي الرياضيات الأعداد حتى ١٠٠ والجمع والطرح والأشكال والقياس والأنماط والنقود والوقت، وفي اللغة الإنجليزية منهج Connect 1 بوحداته كاملة. الدروس مكتوبة ومراجعة بعناية على تسلسل منهج وزارة التربية والتعليم، وباقي الصفوف والمراحل في الطريق.</p>
+        </div>
+        <div class="card info-card">
+          <h3 style="margin:0 0 8px">🎙️ مستر سكولز — معلم صوتي</h3>
+          <p>مع كل درس معلم كرتوني بيقرأ ويشرح بصوته، والطفل يقدر يسأله في الشات التعليمي ويجاوب من الدروس، ويقدر كمان يجاوب بصوته في خاصية «قولها بصوتك» بعد موافقة ولي الأمر.</p>
+        </div>
+        <div class="card info-card">
+          <h3 style="margin:0 0 8px">🛡️ وعودنا لأولياء الأمور</h3>
+          <ul class="promise-list">
+            <li><b>مجاني تمامًا:</b> كل الدروس والتمارين متاحة من غير أي اشتراك.</li>
+            <li><b>آمن للأطفال:</b> لا جمع بيانات، ولا تواصل مع غرباء، ولا إعلانات داخل الدروس — التفاصيل في <button class="foot-link" type="button" data-open-info="view-privacy" style="padding:0;min-height:0">سياسة الخصوصية</button>.</li>
+            <li><b>ركن ولي الأمر:</b> تقرير تقدم أسبوعي محفوظ على جهازكم فقط، خلف بوابة للكبار.</li>
+            <li><b>يعمل بدون إنترنت:</b> بعد أول زيارة تُحفظ الدروس على الجهاز، ويمكن تثبيت الاسكولز كتطبيق على الموبايل.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ================= تواصل معنا ================= -->
+      <section id="view-contact" hidden>
+        <div class="view-head">
+          <button class="back-btn" type="button" data-back-home>→ رجوع</button>
+          <h2>✉️ تواصل معنا</h2>
+        </div>
+        <p class="sec-sub">الصفحة دي مخصصة لأولياء الأمور والمعلمين — أسئلتكم واقتراحاتكم وملاحظاتكم على الدروس بتساعدنا نطوّر الاسكولز.</p>
+        <div class="card info-card" style="text-align:center">
+          <div style="font-size:52px;line-height:1.2" aria-hidden="true">💬</div>
+          <h3 style="margin:4px 0 8px">كلّمنا على واتساب</h3>
+          <p>أسرع طريقة توصلنا بيها: ابعتولنا رسالة واتساب وهنرد عليكم في أقرب وقت — سؤال عن درس، ملاحظة على المحتوى، أو اقتراح لصف جديد.</p>
+          <!-- رقم واتساب مؤقت (placeholder) — يُستبدل برقم صاحب الموقع الحقيقي عند توفره -->
+          <a class="btn" href="https://wa.me/201000000000?text=%D8%A7%D9%84%D8%B3%D9%84%D8%A7%D9%85%20%D8%B9%D9%84%D9%8A%D9%83%D9%85%D8%8C%20%D8%B9%D9%86%D8%AF%D9%8A%20%D8%A7%D8%B3%D8%AA%D9%81%D8%B3%D8%A7%D8%B1%20%D8%B9%D9%86%20%D9%85%D9%88%D9%82%D8%B9%20%D8%A7%D9%84%D8%A7%D8%B3%D9%83%D9%88%D9%84%D8%B2" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none;margin-top:8px">💬 ابعت رسالة واتساب</a>
+        </div>
+        <div class="card info-card">
+          <h3 style="margin:0 0 8px">قبل ما تبعتوا…</h3>
+          <ul class="promise-list">
+            <li><b>سؤال في درس؟</b> جرّبوا الأول «اسأل المعلم» في الصفحة الرئيسية — مستر سكولز بيجاوب من الدروس في لحظتها.</li>
+            <li><b>تقدم طفلكم؟</b> هتلاقوه في «ركن ولي الأمر» — التقرير محفوظ على جهازكم ولا يصلنا منه شيء.</li>
+            <li><b>ملاحظة على درس؟</b> اكتبولنا اسم الدرس والمادة، وهنراجعها بعناية.</li>
+          </ul>
+        </div>
+      </section>
     </main>
 
     <footer>
@@ -852,6 +945,11 @@
         <button class="btn ghost" type="button" id="installFooterBtn">📱 نزّل تطبيق الاسكولز على موبايلك</button>
         <button class="btn ghost" type="button" id="parentFooterBtn">👨‍👩‍👧 ركن ولي الأمر — تقرير التقدم</button>
       </div>
+      <nav class="foot-links" aria-label="صفحات الموقع">
+        <button class="foot-link" type="button" data-open-info="view-privacy">سياسة الخصوصية</button>
+        <button class="foot-link" type="button" data-open-info="view-about">عن الاسكولز</button>
+        <button class="foot-link" type="button" data-open-info="view-contact">تواصل معنا</button>
+      </nav>
       <!-- مساحة إعلانية — أسفل الصفحة الرئيسية فقط (مكان للكبار، لا تظهر داخل أي شاشة أطفال).
            هنا يُركَّب كود Google AdSense لاحقًا عندما يكون لدى صاحب الموقع حساب AdSense ونطاق خاص.
            لا يوجد كود إعلانات حقيقي الآن، ولا محتوى إعلاني وهمي — هذه مجرد مساحة محجوزة ومُعلَّمة بوضوح. -->
@@ -3971,6 +4069,38 @@ refreshStars();
       return d;
     };
   }
+})();
+</script>
+
+<script>
+"use strict";
+/* ============================================================
+   📄 صفحات المعلومات: سياسة الخصوصية / عن الاسكولز / تواصل معنا
+   شاشات ثابتة تُفتح من روابط الفوتر، وتُخفى عند أي تنقّل آخر.
+   ============================================================ */
+(function () {
+  var INFO = ["view-privacy", "view-about", "view-contact"];
+  var MAIN = ["view-home", "view-subject", "view-lesson", "view-challenge", "view-chat", "view-parent"];
+  function el(id) { return document.getElementById(id); }
+  function hideInfo() { INFO.forEach(function (id) { var e = el(id); if (e) e.hidden = true; }); }
+  function openInfo(id) {
+    MAIN.concat(INFO).forEach(function (v) { var e = el(v); if (e) e.hidden = true; });
+    var t = el(id);
+    if (t) t.hidden = false;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  if (typeof show === "function") {
+    var prevShow = show;
+    show = function (id) { prevShow(id); if (INFO.indexOf(id) === -1) hideInfo(); };
+  }
+  var parentView = el("view-parent");
+  if (parentView && "MutationObserver" in window) {
+    new MutationObserver(function () { if (!parentView.hidden) hideInfo(); })
+      .observe(parentView, { attributes: true, attributeFilter: ["hidden"] });
+  }
+  document.querySelectorAll("[data-open-info]").forEach(function (b) {
+    b.addEventListener("click", function () { openInfo(b.getAttribute("data-open-info")); });
+  });
 })();
 </script>
 </body>
