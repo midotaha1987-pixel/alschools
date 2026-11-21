@@ -483,13 +483,14 @@
       .t-avatar img,.audio-avatar img,.hero-img-card img{transition:opacity .18s ease}
       .hero-img-card{cursor:pointer}
 
-      /* ===== وعود الأمان ===== */
-      .trust-strip{display:grid;gap:10px;grid-template-columns:repeat(2,1fr);margin:22px 0 2px}
-      @media(min-width:820px){.trust-strip{grid-template-columns:repeat(4,1fr)}}
-      .trust-item{background:var(--card);border:2px solid var(--line);border-radius:22px;padding:14px 10px;text-align:center;box-shadow:var(--shadow)}
-      .trust-item .t-ic{font-size:30px;display:block;line-height:1.2}
-      .trust-item b{display:block;font-size:17.5px;margin-top:2px}
-      .trust-item small{color:var(--ink-soft);font-weight:600;font-size:13.5px;line-height:1.5;display:block}
+      /* ===== وعود الأمان — شريط مدمج صغير ===== */
+      .trust-strip{display:flex;flex-wrap:wrap;align-items:center;gap:4px 18px;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:9px 14px;margin:22px 0 2px;box-shadow:var(--shadow)}
+      .trust-item{display:inline-flex;align-items:center;gap:6px;font-size:14.5px;font-weight:700;white-space:nowrap;line-height:1.9}
+      .trust-item .t-ic{font-size:17px;line-height:1}
+      .trust-more{margin-inline-start:auto;background:none;border:none;color:var(--brand-dark);font-family:inherit;font-weight:800;font-size:14px;cursor:pointer;padding:6px 8px;min-height:36px;text-decoration:underline;text-underline-offset:4px;border-radius:10px;white-space:nowrap}
+      @media (prefers-color-scheme: dark){.trust-more{color:var(--brand)}}
+      .trust-details{flex-basis:100%;border-top:1px dashed var(--line);margin-top:6px;padding-top:8px}
+      .trust-details .promise-list{line-height:1.9}
 
       /* ===== خريطة المغامرة ===== */
       .map-wrap{position:relative;display:grid;gap:30px;padding:18px 2px 8px}
@@ -649,12 +650,22 @@
           </div>
         </div>
 
-        <!-- وعود الأمان — ظاهرة لكل أب وأم من أول لحظة -->
+        <!-- وعود الأمان — شريط مدمج صغير في الرئيسية فقط، والتفاصيل خلف زر «اعرف المزيد» -->
         <div class="trust-strip" role="note" aria-label="وعود الأمان لأولياء الأمور">
-          <div class="trust-item"><span class="t-ic" aria-hidden="true">🚫</span><b>الدروس من غير إعلانات</b><small>إعلانات قليلة في أماكن الكبار فقط — ولا أي محتوى خارجي داخل الدروس</small></div>
-          <div class="trust-item"><span class="t-ic" aria-hidden="true">🛡️</span><b>من غير غرباء</b><small>المعلم برنامج تعليمي — مفيش تواصل مع أي شخص</small></div>
-          <div class="trust-item"><span class="t-ic" aria-hidden="true">🔒</span><b>من غير جمع بيانات</b><small>تقدم طفلك واسمه على جهازكم بس</small></div>
-          <div class="trust-item"><span class="t-ic" aria-hidden="true">📴</span><b>يشتغل من غير نت</b><small>بعد أول زيارة، الدروس كلها متاحة</small></div>
+          <span class="trust-item"><span class="t-ic" aria-hidden="true">🚫</span>الدروس من غير إعلانات</span>
+          <span class="trust-item"><span class="t-ic" aria-hidden="true">🛡️</span>من غير غرباء</span>
+          <span class="trust-item"><span class="t-ic" aria-hidden="true">🔒</span>من غير جمع بيانات</span>
+          <span class="trust-item"><span class="t-ic" aria-hidden="true">📴</span>يشتغل من غير نت</span>
+          <button class="trust-more" type="button" id="trustMoreBtn" aria-expanded="false" aria-controls="trustDetails">اعرف المزيد</button>
+          <div class="trust-details" id="trustDetails" hidden>
+            <ul class="promise-list">
+              <li><b>الدروس من غير إعلانات:</b> إعلانات قليلة في أماكن الكبار فقط (ركن ولي الأمر وأسفل الصفحة الرئيسية) — ولا أي إعلانات أو محتوى خارجي داخل الدروس أو التمارين أو التحدي أو الشات أبدًا، ولا إعلانات مراهنات أو كازينو إطلاقًا.</li>
+              <li><b>من غير غرباء:</b> المعلم برنامج تعليمي يجيب من دروس المنهج فقط — مفيش تواصل مع أي شخص حقيقي ولا روابط اجتماعية.</li>
+              <li><b>من غير جمع بيانات:</b> لا حسابات ولا تسجيل دخول؛ تقدم طفلكم واسمه محفوظة على جهازكم بس، وتتمسح بمسح بيانات المتصفح.</li>
+              <li><b>يشتغل من غير نت:</b> بعد أول زيارة، الدروس كلها بتتحفظ على الجهاز ومتاحة من غير إنترنت.</li>
+            </ul>
+            <p style="margin:8px 0 2px">التفاصيل الكاملة في <button class="foot-link" type="button" data-open-info="view-privacy" style="padding:0;min-height:0;font-size:15px">سياسة الخصوصية</button>.</p>
+          </div>
         </div>
 
         <section class="block" aria-labelledby="stagesT">
@@ -859,16 +870,7 @@
           <h3 style="margin:0 0 8px">📚 المحتوى والمنهج</h3>
           <p style="margin:0">دروس الاسكولز مكتوبة أصلًا على تسلسل مناهج وزارة التربية والتعليم المصرية كاملة (الترمان) من الصف الأول إلى السادس الابتدائي: في الصف الأول كل الحروف الهجائية الـ٢٨ — درس لكل حرف بالطريقة المقطعية (قصة، أشكال، أصوات بالحركات والمد والسكون والتنوين، مقاطع، تكوين كلمات، قراءة جمل، كتابة) — ثم تتدرج الدروس في باقي الصفوف عبر القراءة والفهم والنحو والإملاء في اللغة العربية، والأعداد والعمليات والكسور والأعداد العشرية والهندسة والقياس والإحصاء في الرياضيات، ومنهج Connect بوحداته في اللغة الإنجليزية لكل صف — بنفس ترتيب وأهداف كتب الوزارة، لكن بأسلوب لعب وقصص وتمارين متدرجة من ثلاث مستويات، ودرس صوتي مع المعلم في كل درس. التقرير اللي فوق بيخص الصف المختار حاليًا في الصفحة الرئيسية — بدّلوا الصف من هناك لعرض تقرير أي صف آخر.</p>
         </div>
-        <div class="card" style="margin-top:14px">
-          <h3 style="margin:0 0 8px">🛡️ وعود الأمان</h3>
-          <ul class="promise-list">
-            <li><b>إعلانات قليلة وفي أماكن الكبار فقط:</b> توجد مساحتان إعلانيتان فقط في الموقع كله — واحدة هنا في ركن ولي الأمر (أسفل هذه الصفحة) وواحدة في أسفل الصفحة الرئيسية — ولا توجد أي إعلانات أو محتوى خارجي داخل الدروس أو التمارين أو التحدي أو الشات أو الدرس الصوتي أبدًا، ولا إعلانات منبثقة، ولا إعلانات مراهنات أو كازينو إطلاقًا.</li>
-            <li><b>من غير تواصل مع غرباء:</b> «مستر سكولز» برنامج تعليمي يجيب من دروس المنهج فقط — لا توجد محادثات مع أشخاص حقيقيين ولا روابط اجتماعية.</li>
-            <li><b>من غير جمع بيانات:</b> لا حسابات ولا تسجيل دخول؛ النجوم والتقدم واسم الطفل محفوظة على جهازكم فقط، وتتمسح بمسح بيانات المتصفح.</li>
-            <li><b>المايك بموافقتكم:</b> خاصية «قولها بصوتك» لا تعمل إلا بعد موافقة ولي الأمر هنا، وتستخدم خدمة التعرف على الصوت في المتصفح نفسه (في متصفح كروم تُعالج بواسطة جوجل) — والموقع نفسه لا يخزّن أي تسجيلات ولا يرسلها.</li>
-            <li><b>يعمل بدون إنترنت:</b> بعد أول زيارة تُحفظ الدروس على الجهاز وتفتح من غير نت.</li>
-          </ul>
-        </div>
+        <!-- وعود الأمان مختصرة في شريط الصفحة الرئيسية (زر «اعرف المزيد»)، وتفاصيلها الكاملة في سياسة الخصوصية — لا تُكرَّر هنا -->
         <!-- وحدة إعلان Google AdSense — ركن ولي الأمر فقط (مكان للكبار، لا تظهر داخل أي شاشة أطفال).
              Publisher ID: ca-pub-5356390506906623
              ملحوظة لصاحب الموقع: رقم الوحدة data-ad-slot يُضاف هنا بعد إنشاء وحدة إعلان Display في حساب AdSense
@@ -5229,6 +5231,13 @@ function goHome(){ renderSubjects(); show("view-home"); }
 document.querySelectorAll("[data-back-home]").forEach(b => b.addEventListener("click", goHome));
 document.querySelectorAll("[data-open-chat]").forEach(b => b.addEventListener("click", () => show("view-chat")));
 document.getElementById("askBtnTop").addEventListener("click", () => show("view-chat"));
+document.getElementById("trustMoreBtn").addEventListener("click", () => {
+  const d = document.getElementById("trustDetails");
+  const open = d.hidden;
+  d.hidden = !open;
+  document.getElementById("trustMoreBtn").setAttribute("aria-expanded", String(open));
+  document.getElementById("trustMoreBtn").textContent = open ? "إخفاء التفاصيل" : "اعرف المزيد";
+});
 document.querySelector("[data-goto-subjects]").addEventListener("click", () => {
   document.getElementById("subjectsBlock").scrollIntoView({ behavior:"smooth" });
 });
