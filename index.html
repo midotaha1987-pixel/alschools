@@ -1055,6 +1055,11 @@
           <p class="tch-note" style="margin:12px 0 0">🔒 الخصوصية: الكود فيه التقدّم واللقب بس — مفيش اسم حقيقي ولا أي بيانات شخصية، ومفيش أي حاجة بتتبعت لأي مكان؛ إنتوا بس اللي بتنسخوه وتبعتوه بنفسكم لو حبيتوا.</p>
         </div>
         <div class="card" style="margin-top:14px">
+          <h3 style="margin:0 0 8px">🔄 مسح التقدّم والبدء من جديد</h3>
+          <p style="margin:0 0 12px">بيمسح كل التقدّم المحفوظ على الجهاز ده (الدروس والنجوم والشارات والصف المختار) ويرجّع الموقع كأنه أول مرة يتفتح. اعملوا ده بس لو عاوزين تبدأوا من الصفر.</p>
+          <button class="btn ghost" type="button" id="resetProgressBtn">🔄 امسح التقدّم وابدأ من جديد</button>
+        </div>
+        <div class="card" style="margin-top:14px">
           <h3 style="margin:0 0 8px">🔗 شارك درس مع حد</h3>
           <p style="margin:0 0 12px">اختاروا أي درس وانسخوا لينكه — واللي يفتح اللينك هيلاقي الدرس نفسه مفتوح قدامه على طول، من غير ما يدوّر. تنفع لو حابين تبعتوا درس معيّن لطفلكم على جهاز تاني، أو تشاركوه مع ولي أمر تاني أو مدرّس.</p>
           <div class="tch-grid c2">
@@ -1386,6 +1391,7 @@
         <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5356390506906623" data-ad-format="auto" data-full-width-responsive="true"></ins>
         <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
       </div>
+      <p style="margin:10px 0 0;font-size:13px;font-weight:700;opacity:.7">الإصدار ٣٤</p>
     </footer>
     <!-- ================= الدرس الصوتي الكامل ================= -->
     <div class="audio-overlay" id="audioOverlay" hidden role="dialog" aria-label="الدرس الصوتي مع المعلم">
@@ -5640,6 +5646,7 @@ CHALLENGES["g6_english"] = [
 "use strict";
 /* ================= الحالة والتخزين ================= */
 const LS_KEY = "elschoolz_v1";
+window.__LSKWLZ_VERSION = "v34";
 let store = { stars:{}, chat:[], missed:{} };
 try { const s = JSON.parse(localStorage.getItem(LS_KEY) || "null"); if (s && typeof s === "object") store = Object.assign(store, s); } catch(e){}
 function save(){ try { localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch(e){} }
@@ -5707,6 +5714,9 @@ function showRunnerReward(lessonId){
     var fr = document.getElementById("runnerFrame");
     if (!ov || !fr) return;
     window.__runnerReturnLesson = curLesson.id;
+    /* v34: المكافأة اتفتحت — امسح العلامة عشان ما تتفتحش تاني عند إعادة فتح الدرس */
+    try { if (store.runnerPending) { delete store.runnerPending; save(); } } catch(e){}
+    try { window.__runnerTimer = null; } catch(e){}
     fr.src = "runner.html?lesson=" + encodeURIComponent(curLesson.id) + "&title=" + encodeURIComponent(curLesson.title);
     ov.hidden = false;
     document.body.style.overflow = "hidden";
@@ -5738,6 +5748,8 @@ const VIEWS = ["view-home","view-subject","view-lesson","view-challenge","view-c
 function show(id){
   /* v32: الغي مؤقّت المكافأة بس عند مغادرة شاشة الدرس — إعادة عرض نفس الدرس (نفس الهاش/إعادة فتح اللينك) ما تلغيهاش، الطفل لسه في الدرس */
   try { if (id !== "view-lesson" && window.__runnerTimer) { clearTimeout(window.__runnerTimer); window.__runnerTimer = null; } } catch(e){}
+  /* v34: مغادرة الدرس بتلغي المكافأة المعلّقة برضه — عشان ما تطلعش متأخرة على الرئيسية */
+  try { if (id !== "view-lesson" && store.runnerPending) { delete store.runnerPending; save(); } } catch(e){}
   VIEWS.forEach(v => { document.getElementById(v).hidden = v !== id; });
   try { clearTimeout(toastTimer); document.getElementById("toast").classList.remove("show"); } catch(e){}
   try { if (typeof window.__stopConfetti === "function") window.__stopConfetti(); } catch(e){}
@@ -5843,6 +5855,8 @@ function openLesson(id){
   document.getElementById("lessonTitle").textContent = curLesson.title;
   document.getElementById("exerciseZone").hidden = true;
   renderStep(); show("view-lesson");
+  /* v34: الدرس ده اتخلّص ومكافأته لسه ما اتفتحتش (مثلًا الصفحة اتعملها تحديث بعد الإكمال) — أعد ضبط مؤقّت المكافأة */
+  try { if (store.runnerPending === id && store.lessonsDone && store.lessonsDone[id] && !window.__runnerTimer) { var _pr = id; window.__runnerTimer = setTimeout(function(){ if (typeof showRunnerReward === "function") showRunnerReward(_pr); }, 1200); } } catch(e){}
 }
 document.getElementById("lessonBack").addEventListener("click", () => openSubject(curLesson.subject));
 document.getElementById("lessonDoneBack").addEventListener("click", () => openSubject(curLesson.subject));
@@ -7651,6 +7665,8 @@ refreshStars();
         checkNewBadges();
         /* مكافأة: لعبة الجري بتفتح بعد ما الطفل يشوف الاحتفال — بس لو لسه في نفس الدرس */
         var _rid = curLesson.id;
+        /* v34: علّم إن مكافأة الدرس ده لسه ما اتفتحتش — لو الصفحة اتعملها تحديث أو اتعاد فتح الدرس، المكافأة تتفتح برضه (وتتلغي بس لو الطفل ساب الدرس) */
+        try { store.runnerPending = curLesson.id; save(); } catch(e){}
         window.__runnerTimer = setTimeout(function(){ if (typeof showRunnerReward === "function") showRunnerReward(_rid); }, 1200);
       }
     } catch (e) {}
@@ -9886,6 +9902,19 @@ function mergeBackupData(st, d, lessonsMeta) {
     if (ok) ok.textContent = "✔ اتم الاستعادة والدمج بنجاح! التقدّم على الجهاز دلوقتي: " + toAr(Object.keys(store.lessonsDone || {}).length) + " درس منجز و" + toAr(res.stars) + " نجمة — ومفيش أي تقدّم كان موجود هنا اتمسح. (تقرير ولي الأمر اللي فوق هيتحدّث لما تفتحوا الركن من جديد.)";
     toast("💾 رجع تقدّم طفلك واتدمج مع اللي على الجهاز");
     if (inp) inp.value = "";
+  });
+  /* v34: مسح التقدّم — زرارين للتأكيد (من غير نافذة تأكيد منبثقة) ثم مسح التخزين وإعادة التحميل */
+  var resetBtn = $("resetProgressBtn");
+  if (resetBtn) resetBtn.addEventListener("click", function(){
+    if (resetBtn.dataset.armed) {
+      try { localStorage.removeItem(LS_KEY); } catch(e){}
+      try { localStorage.removeItem(CHOICE_KEY); } catch(e){}
+      location.reload();
+      return;
+    }
+    resetBtn.dataset.armed = "1";
+    resetBtn.textContent = "⚠️ دوس تاني للتأكيد — هيمسح كل التقدّم";
+    setTimeout(function(){ delete resetBtn.dataset.armed; resetBtn.textContent = "🔄 امسح التقدّم وابدأ من جديد"; }, 5000);
   });
 })();
 </script>
