@@ -5695,12 +5695,16 @@ function speak(text, lang){
 if ("speechSynthesis" in window) { try { speechSynthesis.getVoices(); } catch(e){} }
 
 /* ================= مكافأة لعبة الجري (بعد إكمال تمارين الدرس) ================= */
-function showRunnerReward(){
+function showRunnerReward(lessonId){
   try {
     if (!curLesson) return;
+    /* المكافأة تتفتح بس والطفل لسه في نفس الدرس اللي خلّصه — لو اتنقّل لصفحة تانية، المؤقت ده يتلغي بصمت */
+    if (lessonId && curLesson.id !== lessonId) return;
+    if (document.getElementById("view-lesson").hidden) return;
     var ov = document.getElementById("runnerOverlay");
     var fr = document.getElementById("runnerFrame");
     if (!ov || !fr) return;
+    window.__runnerReturnLesson = curLesson.id;
     fr.src = "runner.html?lesson=" + encodeURIComponent(curLesson.id) + "&title=" + encodeURIComponent(curLesson.title);
     ov.hidden = false;
     document.body.style.overflow = "hidden";
@@ -5714,6 +5718,12 @@ function closeRunnerReward(){
     if (ov) ov.hidden = true;
     if (fr) fr.src = "about:blank";
     document.body.style.overflow = "";
+    /* «رجوع للدرس» يرجّع لشاشة الدرس اللي اتحل — لو الطفل لسه فيه، القفل بس بيكفي */
+    var rid = window.__runnerReturnLesson; window.__runnerReturnLesson = null;
+    if (rid) {
+      var onLesson = curLesson && curLesson.id === rid && !document.getElementById("view-lesson").hidden;
+      if (!onLesson && typeof openLesson === "function") openLesson(rid);
+    }
   } catch(e){}
 }
 document.getElementById("runnerClose").addEventListener("click", closeRunnerReward);
@@ -5724,6 +5734,8 @@ window.addEventListener("message", function(ev){
 /* ================= التنقل بين الشاشات ================= */
 const VIEWS = ["view-home","view-subject","view-lesson","view-challenge","view-chat"];
 function show(id){
+  /* لو الطفل اتنقّل قبل ما مؤقت المكافأة يضرب، الغيه — المكافأة متتفتحش متأخرة على صفحة تانية */
+  try { if (window.__runnerTimer) { clearTimeout(window.__runnerTimer); window.__runnerTimer = null; } } catch(e){}
   VIEWS.forEach(v => { document.getElementById(v).hidden = v !== id; });
   try { clearTimeout(toastTimer); document.getElementById("toast").classList.remove("show"); } catch(e){}
   try { if (typeof window.__stopConfetti === "function") window.__stopConfetti(); } catch(e){}
@@ -6504,8 +6516,9 @@ refreshStars();
     var gp = document.getElementById("gradePickOverlay");
     var choiceShown = false;
     var tryShowChoice = function(){
+      /* طبقة واحدة بس في المرة: لو نافذة اختيار الصف مفتوحة، البطاقة تستنى (وتتخفي لو كانت ظهرت قبلها) */
+      if (gp && !gp.hidden) { hideCard(); return; }
       if (choiceShown) return;
-      if (gp && !gp.hidden) return;
       choiceShown = true;
       showCard();
     };
@@ -7632,8 +7645,9 @@ refreshStars();
         toast("🎉 خلّصت " + curLesson.title + " كله" + (store.kidName ? " يا " + store.kidName : " يا بطل") + "! — وفتحت المحطة اللي بعدها!");
         celebrate(true, document.getElementById("exerciseZone"));
         checkNewBadges();
-        /* مكافأة: لعبة الجري بتفتح بعد ما الطفل يشوف الاحتفال */
-        setTimeout(function(){ if (typeof showRunnerReward === "function") showRunnerReward(); }, 1200);
+        /* مكافأة: لعبة الجري بتفتح بعد ما الطفل يشوف الاحتفال — بس لو لسه في نفس الدرس */
+        var _rid = curLesson.id;
+        window.__runnerTimer = setTimeout(function(){ if (typeof showRunnerReward === "function") showRunnerReward(_rid); }, 1200);
       }
     } catch (e) {}
   }
