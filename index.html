@@ -269,10 +269,11 @@
       .num-strip span.hl{background:var(--sun);border-color:var(--sun-dark);color:var(--sun-text)}
 
       /* ===== Exercises ===== */
-      .level-head{display:flex;align-items:center;gap:10px;margin:26px 0 12px}
+      .level-head{display:flex;align-items:center;gap:10px;margin:26px 0 12px;flex-wrap:wrap}
       .level-head .lv{font-size:15px;font-weight:800;color:#fff;border-radius:999px;padding:3px 14px}
       .lv1{background:var(--green)} .lv2{background:var(--orange)} .lv3{background:var(--coral)}
       .level-head h3{margin:0;font-size:23px;font-weight:800}
+      @media (max-width:520px){.level-head h3{font-size:20px}}
       .ex-card{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:18px;box-shadow:var(--shadow);margin-bottom:12px}
       .ex-card.solved{border-color:var(--brand)}
       .ex-type{font-size:13.5px;font-weight:800;color:var(--ink-soft);letter-spacing:.2px}
@@ -351,9 +352,10 @@
       .send-btn{flex:0 0 auto;width:52px;border-radius:16px}
 
       .toast{
-        position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);z-index:99;
+        position:fixed;bottom:16px;left:50%;transform:translateX(-50%) translateY(80px);z-index:99;
         background:var(--ink);color:var(--bg);font-weight:800;font-size:17px;border-radius:999px;
         padding:10px 22px;opacity:0;transition:all .3s ease;pointer-events:none;box-shadow:var(--shadow);
+        width:max-content;max-width:calc(100vw - 32px);text-align:center;line-height:1.45;
       }
       .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
       .burst{position:absolute;inset:0;pointer-events:none;overflow:visible}
@@ -8736,7 +8738,7 @@ refreshStars();
         '<span class="unit-top">' +
           '<span class="unit-num" style="background:' + color + '">' + toAr(ui + 1) + "</span>" +
           "<span><h4>" + (typeof unitNameHtml === "function" ? unitNameHtml(u.name) : u.name) + "</h4>" +
-          '<p class="unit-meta">' + toAr(u.lessons.length) + (u.lessons.length === 1 ? " درس" : " دروس") + " • خلّصت " + toAr(doneCount) + " من " + toAr(u.lessons.length) + "</p></span>" +
+          '<p class="unit-meta">' + toAr(u.lessons.length) + (u.lessons.length === 1 ? " درس" : " دروس") + ' • <span style="white-space:nowrap">خلّصت ' + toAr(doneCount) + " من " + toAr(u.lessons.length) + "</span></p></span>" +
           '<span class="unit-state">' + (allDone ? "خلّصتها كلها! 🎉" : doneCount ? "كمّل من حيث وقفت ←" : "ابدأ الوحدة ←") + "</span>" +
         "</span>" +
         '<span class="prog"><i style="width:' + pct + '%"></i></span>' +
