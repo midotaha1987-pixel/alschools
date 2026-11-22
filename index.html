@@ -660,6 +660,7 @@
             <h1>نتعلّم ونلعب…<br />ونجمع <span class="hl">النجوم</span> ★</h1>
             <p class="lead">شرح بسيط وممتع لمناهج مصر، درس درس، بقصص وتمارين تفاعلية تتصحّح في لحظتها — زي كتب التمارين المشهورة، بس إنت البطل فيها.</p>
             <div class="speech"><b>مستر سكولز بيقول:</b> <span id="heroGreet">أهلاً بيك يا بطل!</span> أنا معاك خطوة بخطوة: هنسمع قصة، ونتعلم، ونلعب تمارين، وكل إجابة صح هتكسبك نجمة. يلا نبدأ؟</div>
+            <div class="hero-level" id="heroLevel" role="note"></div>
             <div class="hero-cta">
               <button class="btn" type="button" data-goto-subjects>ابدأ التعلم</button>
               <button class="btn ghost" type="button" data-open-chat>اسأل المعلم</button>
@@ -715,6 +716,20 @@
           <h2 class="sec-title" id="gradesT">صفوف المرحلة الابتدائية</h2>
           <p class="sec-sub">كل الصفوف الستة مفتوحة وكاملة — اختار صفّك وابدأ المغامرة.</p>
           <div class="grades" id="gradeRow"></div>
+        </section>
+
+        <section class="block" id="journeyBlock" aria-labelledby="journeyT">
+          <h2 class="sec-title" id="journeyT">🗺️ خريطة مغامرتي</h2>
+          <p class="sec-sub" id="journeySub">رحلتك وحدة وحدة بالترتيب — المحطة الخضرا خلّصتها، واللي عليها 📍 هي مكانك دلوقتي، والمقفولة بتفتح لما تخلّص اللي قبلها.</p>
+          <div id="journeyBox"></div>
+          <div class="card" id="weeklyCard" style="margin-top:16px;border-color:var(--sun)">
+            <span class="badge" style="background:var(--sun-tint);color:var(--sun-ink);border-color:var(--sun)">تحدي الأسبوع</span>
+            <h3 style="margin:8px 0 4px">🏆 تحدي الأسبوع</h3>
+            <p id="weeklyStatus" style="margin:0 0 8px">١٠ أسئلة جديدة كل أسبوع من مواد صفّك التلاتة — كل سؤال له ٢٠ ثانية. خلّصه مرة واحدة في الأسبوع وخد شارة الأسبوع ونجوم!</p>
+            <div id="weeklyBadges" style="margin:0 0 10px"></div>
+            <button class="btn sun" type="button" id="weeklyBtn">ابدأ تحدي الأسبوع</button>
+            <p class="prog-txt" id="weeklyCount" style="margin-top:10px"></p>
+          </div>
         </section>
 
         <section class="block" id="subjectsBlock" aria-labelledby="subjectsT">
@@ -5660,6 +5675,102 @@ function shuffle(arr){
   for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
   return a;
 }
+/* مثال محلول قصير لنفس نوع السؤال: بيتبني حسابيًا من أرقام قريبة من أرقام السؤال نفسه،
+   فالناتج والخطوات صح دايمًا بالحساب، والمثال مش بيكشف إجابة السؤال. لو نوع السؤال مش
+   حسابي (حروف/كلمات/مفاهيم) بيرجع فاضي ويفضل الشرح العادي بس — مفيش مثال مخترع. */
+function arNum(n){ return toAr(String(n)).replace(/\./g, "٫"); }
+function workedExample(ex){
+  if (!ex || ex.type === "order") return "";
+  var t = stripTags(ex.q || "").replace(/[٠-٩]/g, function(d){ return "٠١٢٣٤٥٦٧٨٩".indexOf(d); }).replace(/٫/g, ".");
+  function done(txt){ return "<br />📝 مثال محلول: " + txt; }
+  function isInt(n){ return Math.abs(n - Math.round(n)) < 1e-9; }
+  /* كسور ليها نفس المقام: بنجمع/نطرح البسط بس */
+  var fm = t.match(/(\d+)\s*\/\s*(\d+)\s*([+\-−–])\s*(\d+)\s*\/\s*(\d+)/);
+  if (fm) {
+    var fn1 = +fm[1], fd = +fm[2], fop = fm[3] === "+" ? "+" : "-", fn2 = +fm[4], fd2 = +fm[5];
+    if (fd === fd2 && fd > 0) {
+      var en1 = fn1 + 1, en2 = fn2 + 2;
+      if (fop === "-" && en1 <= en2) en1 = en2 + 2;
+      var fr = fop === "+" ? en1 + en2 : en1 - en2;
+      return done("خد " + arNum(en1) + "/" + arNum(fd) + " " + (fop === "+" ? "+" : "−") + " " + arNum(en2) + "/" + arNum(fd) +
+        ": المقام بيضل زي ما هو (" + arNum(fd) + ")، وبن" + (fop === "+" ? "جمع" : "طرح") + " البسط بس: " +
+        arNum(en1) + " " + (fop === "+" ? "+" : "−") + " " + arNum(en2) + " = " + arNum(fr) + " — فالناتج " + arNum(fr) + "/" + arNum(fd) + ".");
+    }
+    return "";
+  }
+  /* العدد اللي بعد/قبل عدد، والعدد اللي بين عددين — أمثلة عددية بسيطة وصحيحة دايمًا */
+  var bm = t.match(/بين\s*(\d{1,3})\s*و\s*(\d{1,3})/);
+  if (bm && +bm[2] === +bm[1] + 2 && /عدد/.test(t)) {
+    var ba = +bm[1] + 3;
+    return done("خد العددين " + arNum(ba) + " و" + arNum(ba + 2) + ": العدد اللي بينهم هو " + arNum(ba + 1) + " — بنزود واحد على الصغير ونوصل للكبير.");
+  }
+  var nm = t.match(/(?:اللي بعد|بييجي بعد|بعد)\s*(\d{1,3})/);
+  if (nm && !/قبل|السابق/.test(t) && /العدد/.test(t)) {
+    var nstep = /عشرات/.test(t) ? 10 : 1;
+    var nn = +nm[1] + 3 * nstep;
+    return done("خد العدد " + arNum(nn) + ": العدد اللي بعده هو " + arNum(nn + nstep) + " — بنزود " + (nstep === 10 ? "عشرة" : "واحد") + " بس ونمشي خطوة لقدام في الطابور.");
+  }
+  var pm = t.match(/(?:السابق|اللي قبل|قبل)\D{0,12}?(\d{1,3})/);
+  if (pm && /العدد/.test(t)) {
+    var pstep = /عشرات/.test(t) ? 10 : 1;
+    var pn = +pm[1] + 3 * pstep;
+    return done("خد العدد " + arNum(pn) + ": العدد اللي قبله هو " + arNum(pn - pstep) + " — بننقص " + (pstep === 10 ? "عشرة" : "واحد") + " بس ونرجع خطوة لورا في الطابور.");
+  }
+  if ((t.match(/\//g) || []).length >= 2) return "";
+  if ((t.match(/[+\-−–×÷]/g) || []).length >= 2) return "";
+  var m = t.match(/(\d+(?:\.\d+)?)\s*([+\-−–×x÷\/])\s*(\d+(?:\.\d+)?)/);
+  if (!m) return "";
+  var a = parseFloat(m[1]), b = parseFloat(m[3]), o = m[2];
+  if (o === "x") o = "×"; else if (o === "/") o = "÷"; else if (o !== "+" && o !== "×" && o !== "÷") o = "-";
+  var ea, eb, r, i, steps;
+  if (o === "+") {
+    ea = a + 3; eb = b + 2; r = Math.round((ea + eb) * 1000) / 1000;
+    if (isInt(ea) && isInt(eb) && r <= 30) {
+      var big = Math.max(ea, eb), small = Math.min(ea, eb); steps = [];
+      for (i = 1; i <= small; i++) steps.push(arNum(big + i));
+      return done(arNum(ea) + " + " + arNum(eb) + ": بنبدأ بالعدد الكبير " + arNum(big) + " ونعدّ بعده " + arNum(small) + " خطوات: " + steps.join("، ") + " — فالناتج " + arNum(r) + ".");
+    }
+    return done(arNum(ea) + " + " + arNum(eb) + ": بنرتّب العددين تحت بعض (والفاصلة تحت الفاصلة لو فيه كسور عشرية)، ونجمع الآحاد وبعدين العشرات وبعدين المئات، ومع الحمل لو الخانة عدّت ٩ — فالناتج " + arNum(r) + ".");
+  }
+  if (o === "-") {
+    ea = a + 4; eb = b + 1;
+    if (ea <= eb) ea = eb + Math.max(2, Math.round(a) || 2);
+    r = Math.round((ea - eb) * 1000) / 1000;
+    if (isInt(ea) && isInt(eb) && ea <= 30) {
+      steps = [];
+      for (i = 1; i <= eb; i++) steps.push(arNum(ea - i));
+      return done(arNum(ea) + " − " + arNum(eb) + ": بنعدّ لورا من " + arNum(ea) + " " + arNum(eb) + " خطوات: " + steps.join("، ") + " — فالناتج " + arNum(r) + ".");
+    }
+    return done(arNum(ea) + " − " + arNum(eb) + ": بنطرح خانة خانة من اليمين، ولو خانة صغيرة بنستلف من اللي جنبها — فالناتج " + arNum(r) + ". ونتأكد بالجمع: " + arNum(r) + " + " + arNum(eb) + " = " + arNum(ea) + " ✓.");
+  }
+  if (o === "×") {
+    if (!isInt(a) || !isInt(b)) return "";
+    if (a >= 2 && a <= 12 && b >= 2 && b <= 9) {
+      eb = b + 1; r = a * eb; steps = [];
+      for (i = 1; i <= eb; i++) steps.push(arNum(a * i));
+      return done(arNum(a) + " × " + arNum(eb) + ": معناها نجمع " + arNum(a) + " على نفسه " + arNum(eb) + " مرات — بنعدّ بـ" + arNum(a) + ": " + steps.join("، ") + " — فالناتج " + arNum(r) + ".");
+    }
+    if (a >= 13 && b >= 2 && b <= 9) {
+      ea = a + 10; var hi = Math.floor(ea / 10) * 10, lo = ea % 10; r = ea * b;
+      return done(arNum(ea) + " × " + arNum(b) + ": بنفك " + arNum(ea) + " لـ(" + arNum(hi) + " + " + arNum(lo) + ") ونضرب كل حتة لوحدها: " + arNum(hi) + " × " + arNum(b) + " = " + arNum(hi * b) + "، و" + arNum(lo) + " × " + arNum(b) + " = " + arNum(lo * b) + " — ونجمعهم: " + arNum(r) + ".");
+    }
+    if (b >= 13 && a >= 2 && a <= 9) {
+      eb = b + 10; var hi2 = Math.floor(eb / 10) * 10, lo2 = eb % 10; r = a * eb;
+      return done(arNum(a) + " × " + arNum(eb) + ": بنفك " + arNum(eb) + " لـ(" + arNum(hi2) + " + " + arNum(lo2) + ") ونضرب كل حتة لوحدها: " + arNum(a) + " × " + arNum(hi2) + " = " + arNum(a * hi2) + "، و" + arNum(a) + " × " + arNum(lo2) + " = " + arNum(a * lo2) + " — ونجمعهم: " + arNum(r) + ".");
+    }
+    return "";
+  }
+  if (o === "÷") {
+    if (!isInt(a) || !isInt(b) || b < 2 || b > 12) return "";
+    eb = b;
+    var eq = Math.max(2, Math.round(a / b)) + 1;
+    if (eq > 12) return "";
+    var ed = eb * eq; steps = [];
+    for (i = 1; i <= eq; i++) steps.push(arNum(eb * i));
+    return done(arNum(ed) + " ÷ " + arNum(eb) + ": بندوّر في جدول " + arNum(eb) + ": " + steps.join("، ") + " — وصلنا لـ" + arNum(ed) + " بعد " + arNum(eq) + " مرات، فالناتج " + arNum(eq) + ".");
+  }
+  return "";
+}
 function buildExercise(id, ex){
   const card = document.createElement("div"); card.className = "ex-card" + (store.stars[id] ? " solved starred" : "");
   const typeName = { choice:"اختار الإجابة الصح", tf:"صح ✓ أو غلط ✗", order:"رتّب", dict:"إملاء — اسمع واختار" }[ex.type];
@@ -5698,7 +5809,7 @@ function buildExercise(id, ex){
       b.addEventListener("click", () => {
         if (card.classList.contains("solved")) return;
         if (o.i === ex.a) { b.classList.add("right"); optsBox.querySelectorAll(".opt").forEach(x => x.disabled = true); solved(b); }
-        else { markMissed(); b.classList.add("wrong"); b.disabled = true; card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake"); showFb(false, "مش دي… ركّز وحاول تاني. تلميح: " + ex.why); }
+        else { markMissed(); b.classList.add("wrong"); b.disabled = true; card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake"); showFb(false, "مش دي… ركّز وحاول تاني. تلميح: " + ex.why + workedExample(ex)); }
       });
       optsBox.appendChild(b);
     });
@@ -5708,7 +5819,7 @@ function buildExercise(id, ex){
       b.addEventListener("click", () => {
         if (card.classList.contains("solved")) return;
         if (val === ex.a) { b.classList.add("right"); optsBox.querySelectorAll(".opt").forEach(x => x.disabled = true); solved(b); }
-        else { markMissed(); b.classList.add("wrong"); b.disabled = true; card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake"); showFb(false, "مش دي… فكّر تاني. تلميح: " + ex.why); }
+        else { markMissed(); b.classList.add("wrong"); b.disabled = true; card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake"); showFb(false, "مش دي… فكّر تاني. تلميح: " + ex.why + workedExample(ex)); }
       });
       optsBox.appendChild(b);
     });
@@ -7119,6 +7230,44 @@ refreshStars();
     if (fresh) { save(); launchConfetti(70); jingle(true); }
     renderBadges();
   }
+  /* ---------- المستويات والألقاب: على مجموع النجوم من التمارين والتحديات ---------- */
+  var LEVELS = [
+    { name: "مستكشف", min: 10 },
+    { name: "بطل", min: 100 },
+    { name: "عبقري", min: 300 }
+  ];
+  function titleInfo() {
+    var t = starTotal(), idx = -1;
+    LEVELS.forEach(function (L, i) { if (t >= L.min) idx = i; });
+    return { idx: idx, stars: t, cur: idx >= 0 ? LEVELS[idx] : null, next: idx + 1 < LEVELS.length ? LEVELS[idx + 1] : null };
+  }
+  window.__titleInfo = titleInfo;
+  window.__levels = LEVELS;
+  window.__celebrateBig = function () { celebrate(true); };
+  function renderTitleLine() {
+    var el = $("heroLevel");
+    if (!el) return;
+    var info = titleInfo();
+    if (info.cur) {
+      el.innerHTML = "🏅 لقبك دلوقتي: <b>" + info.cur.name + "</b>" + (info.next
+        ? " — فاضلك " + toAr(info.next.min - info.stars) + " نجمة وتبقى «" + info.next.name + "»!"
+        : " — أعلى لقب في الاسكولز! 👑");
+    } else {
+      el.innerHTML = "🏅 اجمع " + toAr(LEVELS[0].min) + " نجوم عشان تاخد أول لقب: «" + LEVELS[0].name + "» — إنت عندك " + toAr(info.stars) + " دلوقتي.";
+    }
+  }
+  function checkTitleUp() {
+    var info = titleInfo();
+    if (store.titleSeen === undefined) { store.titleSeen = info.idx; save(); renderTitleLine(); return; }
+    if (info.idx > store.titleSeen && info.cur) {
+      store.titleSeen = info.idx; save();
+      toast("🎉 لقب جديد: بقيت «" + info.cur.name + "»!");
+      celebrate(true);
+    }
+    renderTitleLine();
+  }
+  renderTitleLine();
+
   /* الشارات المكسبوبة من قبل تُعلَّم بصمت عند البدء */
   BADGES.forEach(function (b) { try { if (b.test()) store.seenBadges[b.id] = 1; } catch (e) {} });
   save();
@@ -7135,6 +7284,7 @@ refreshStars();
         setMood("happy", 2200);
         jingle(false);
         checkNewBadges();
+        checkTitleUp();
       }
     };
   }
@@ -7754,11 +7904,25 @@ refreshStars();
     var weakHtml = weak.length ? weak.map(function (w) {
       return '<div class="review-item">📖 ' + w.lesson.title + ' — <span class="ans">' + toAr(w.miss) + (w.miss === 1 ? " تمرين" : " تمارين") + ' اتغلط فيهم</span><br /><small>نصيحة: افتحوا الدرس مع بعض وراجعوا التمارين دي بهدوء — النجمة بتتاخد لما التمرين يتحل صح من أول مرة.</small></div>';
     }).join("") : '<p class="rep-ok">مفيش أخطاء متسجلة لحد دلوقتي — كل التمارين اللي اتحلت، اتحلت صح من أول مرة. ما شاء الله! 🌟</p>';
+    /* لقب البطل وحدود المستويات + شارات تحدي الأسبوع — أرقام حقيقية من نفس المخزن */
+    var tInfo = titleInfo();
+    var wkMap = store.weeklyByGrade || {};
+    var wkLast = null;
+    Object.keys(wkMap).forEach(function (g) { var w = wkMap[g]; if (w && (!wkLast || (w.ts || 0) > (wkLast.ts || 0))) wkLast = w; });
+    var wkBadgeCount = Object.keys(store.weeklyBadges || {}).length;
+    var titleCard =
+      '<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 10px">🏅 لقب البطل والمستويات</h3>' +
+      '<p style="margin:0 0 8px">اللقب الحالي: <b>' + (tInfo.cur ? "«" + tInfo.cur.name + "»" : "لسه مفيش لقب") + '</b> • مجموع النجوم: ⭐ ' + toAr(tInfo.stars) +
+      (tInfo.next ? " • فاضل " + toAr(tInfo.next.min - tInfo.stars) + " نجمة على لقب «" + tInfo.next.name + "»" : " • وصل لأعلى لقب 👑") + "</p>" +
+      '<p style="margin:0 0 8px">حدود الألقاب محسوبة على مجموع النجوم اللي بيكسبها من التمارين والتحديات: لقب «مستكشف» من ' + toAr(LEVELS[0].min) + ' نجمة، ولقب «بطل» من ' + toAr(LEVELS[1].min) + ' نجمة، ولقب «عبقري» من ' + toAr(LEVELS[2].min) + " نجمة. اللقب بيظهر للبطل في الصفحة الرئيسية، ولما بيترقّى بيحتفل مع مستر سكولز.</p>" +
+      '<p style="margin:0">🏆 شارات «تحدي الأسبوع» اللي كسبها لحد دلوقتي: ' + toAr(wkBadgeCount) + " شارة" +
+      (wkLast ? " • آخر تحدي أسبوعي خلّصه: " + toAr(wkLast.score) + " من " + toAr(wkLast.total) + " في الصف " + (GRADE_NAMES[wkLast.grade] || "") : "") + "</p></div>";
     box.innerHTML =
       '<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 8px">📋 ملخص الأسبوع</h3>' +
         '<p style="margin:0 0 12px;font-size:19px;font-weight:700;line-height:1.9">' + summary + '</p>' +
         '<button class="btn" type="button" id="parentPrintBtn">🖨️ اعرض التقرير واطبعه</button>' +
         '<p style="margin:10px 0 0"><small>الطباعة بتتم من متصفحكم (Ctrl+P) بعد ما المعاينة تفتح — والتقرير كله بيتحسب على الجهاز ده بس، مش بيتبعت لأي مكان.</small></p></div>' +
+      titleCard +
       '<div class="grid c2">' +
         '<div class="card rep-stat"><div class="rep-num">⭐ ' + toAr(weekStars) + '</div><p>نجوم هذا الأسبوع<br /><small>إجمالي النجوم منذ البداية: ' + toAr(totalStars) + "</small></p></div>" +
         '<div class="card rep-stat"><div class="rep-num">📚 ' + toAr(doneCount) + " من " + toAr(gradeLessons.length) + '</div><p>دروس مكتملة في الصف ' + GRADE_NAMES[curGrade] + '<br /><small>الدرس يكتمل لما كل تمارينه تتحل — ومنهم ' + lessonWord(weekLessons) + ' الأسبوع ده<br />دروس الأسبوع بتتسجل من النهاردة، واللي اتخلّص قبل كده بيتحسب في الإجمالي بس</small></p></div>' +
@@ -8217,22 +8381,29 @@ refreshStars();
     back.type = "button"; back.className = "back-btn units-back"; back.textContent = "→ كل الوحدات";
     back.addEventListener("click", function () { renderUnits(subId); });
     list.appendChild(back);
+    var uhead = document.createElement("div");
+    uhead.className = "unit-head";
+    uhead.innerHTML = "📚 <b>" + u.name + "</b> — محطات الوحدة دي بالترتيب، وعلامة 📍 عند محطتك الحالية:";
+    list.appendChild(uhead);
     /* القفل/الفتح محسوب على تسلسل المادة كله زي ما هو — مش على الوحدة لوحدها */
     var all = subjectLessons(subId);
     var openById = {}, prevDone = true;
     all.forEach(function (l) { openById[l.id] = prevDone; if (!doneOf(l)) prevDone = false; });
+    var hereUsed = false;
     u.lessons.forEach(function (l) {
       var gi = all.indexOf(l);
       var done = doneOf(l), open = openById[l.id], stars = starsOf(l);
+      var here = open && !done && !hereUsed;
+      if (here) hereUsed = true;
       var st = document.createElement("div");
-      st.className = "station pos-" + (gi % 3) + (done ? " st-done" : open ? " st-open" : " st-locked");
+      st.className = "station pos-" + (gi % 3) + (done ? " st-done" : open ? " st-open" : " st-locked") + (here ? " st-here" : "");
       st.innerHTML =
         '<button type="button" class="station-node" aria-label="' + l.title + '">' + (done ? "★" : open ? toAr(gi + 1) : "🔒") + "</button>" +
         '<div class="station-info"><h4>' + l.title + "</h4><p>" + l.sub + "</p>" +
         '<p class="station-state">' + (done
           ? "خلّصته! ★ " + toAr(stars) + "/" + toAr(l.exercises.length)
           : open
-            ? (stars ? "كمّل المغامرة! جمعت ★ " + toAr(stars) + " من " + toAr(l.exercises.length) : "محطتك الجاية — يلا نبدأ!")
+            ? (here ? "📍 إنت هنا! " : "") + (stars ? "كمّل المغامرة! جمعت ★ " + toAr(stars) + " من " + toAr(l.exercises.length) : "محطتك الجاية — يلا نبدأ!")
             : "🔒 بتفتح لما تخلّص الدرس اللي قبلها") + "</p></div>";
       var node = st.querySelector(".station-node");
       node.addEventListener("click", function () {
@@ -9033,5 +9204,467 @@ function computeClassStats(students) {
 })();
 
 </script>
+<style>
+  /* ===== إضافات: لقب البطل + خريطة الرئيسية + تحدي الأسبوع ===== */
+  .hero-level{margin-top:12px;display:inline-block;background:var(--brand-tint);border:2px solid var(--brand-tint-line);color:var(--brand-tint-ink);border-radius:999px;padding:6px 18px;font-weight:800;font-size:17px}
+  .hero-level:empty{display:none}
+  .j-track{margin-bottom:18px}
+  .j-track-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-weight:800;font-size:20px;margin-bottom:8px}
+  .j-track-prog{color:var(--ink-soft);font-size:16px}
+  .j-path{display:flex;gap:8px;flex-wrap:wrap}
+  .j-station{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:118px;flex:1 1 118px;max-width:172px;border:2.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:16px;padding:10px 8px;font-family:inherit;text-align:center}
+  .j-station .j-ic{font-size:24px;line-height:1.2}
+  .j-station .j-nm{font-weight:800;font-size:14.5px;line-height:1.45}
+  .j-station .j-st{font-size:13.5px;font-weight:700;color:var(--ink-soft)}
+  .j-station.done{border-color:var(--brand);background:var(--brand-tint)}
+  .j-station.here{border-color:var(--sun);background:var(--sun-tint);box-shadow:0 0 0 3px var(--sun-tint-2)}
+  .j-station.locked{opacity:.65}
+  .wk-badge{display:inline-block;background:var(--sun-tint);border:1.5px solid var(--sun);color:var(--sun-ink);border-radius:999px;padding:2px 14px;font-weight:800;font-size:15px;margin:2px 0 2px 6px}
+  .unit-head{font-size:19px;font-weight:700;margin:4px 0 12px;color:var(--ink)}
+  .station.st-here .station-info{border-color:var(--sun);box-shadow:0 0 0 3px var(--sun-tint-2)}
+</style>
+<script>
+"use strict";
+/* ============================================================
+   🚀 مغامرات جديدة: توسيع تحديات الصفوف ٢–٦ (٦ ← ١٢ سؤالًا)
+   + خريطة المغامرة في الصفحة الرئيسية + تحدي الأسبوع
+   - أسئلة التحدي الجديدة من نفس مناهج الصفوف وبنفس قواعد التحدي
+     (٢٠ ثانية للسؤال، نجمة من أول محاولة صح، نتيجة + مراجعة).
+   - تحدي الأسبوع: ١٠ أسئلة حقيقية من بنك تمارين صف الطفل نفسه
+     (مش أسئلة مخترعة)، بتتختار بخوارزمية ثابتة على رقم أسبوع ISO
+     فتفضل هي هي طول الأسبوع وتتغير الأسبوع اللي بعده، وبيتلعب
+     مرة واحدة في الأسبوع لكل صف، وجايزته شارة أسبوعية + نجوم.
+   - كل الحالات الجديدة في نفس مخزن الجهاز (elschoolz_v1).
+   ============================================================ */
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  try { if (typeof store !== "object" || !store || typeof LESSONS === "undefined" || typeof CHALLENGES === "undefined") return; } catch (e) { return; }
+
+  /* ---------- ١) توسيع التحديات: ٦ أسئلة جديدة لكل مادة في الصفوف ٢–٦ ---------- */
+  /* أسئلة قديمة في الصفوف ٤–٦ مكتوبة من غير حقل النوع وهي كلها اختيار من متعدد — بنظبطه هنا من غير ما نلمس بياناتها */
+  Object.keys(CHALLENGES).forEach(function (k) {
+    CHALLENGES[k].forEach(function (q) { if (!q.type && q.opts) q.type = "choice"; });
+  });
+  CHALLENGES["g2_arabic"].push(
+    {type:"choice",q:"أنهي كلمة فيها مدٌّ بالواو؟",opts:["بَاب","نُور","فِيل"],a:1,why:"«نُور» فيها مد بالواو بعد ضمة. «بَاب» مد بالألف، و«فِيل» مد بالياء."},
+    {type:"tf",q:"تنوين الفتح في كلمة «شَجَرَةً» بيحتاج ألفًا زائدة.",a:false,why:"غلط! مع التاء المربوطة تنوين الفتح بيتكتب عليها من غير ألف: شَجَرَةً."},
+    {type:"choice",q:"الضمير «هُمْ» بنستخدمه لـ:",opts:["واحد مذكر","جمع المذكر","واحدة مؤنثة"],a:1,why:"«هم» ضمير للجمع المذكر الغائب. الواحد «هو» والواحدة «هي»."},
+    {type:"dict",word:"الشَّمْس",q:"اسمع الكلمة واختار كتابتها الصح:",opts:["الشَّمْس","السَّمْس","الشَّمْص"],a:0,why:"«الشَّمْس»: اللام شمسية مش بتتنطق، والشين مشددة."},
+    {type:"order",q:"رتّب الكلمات لتكوين جملة:",parts:["قَرَأَ","الْوَلَدُ","الْقِصَّةَ"],why:"قَرَأَ الْوَلَدُ الْقِصَّةَ — جملة فعلية: فعل وفاعل ومفعول به."},
+    {type:"choice",q:"أداة الاستفهام اللي بنسأل بيها عن المكان:",opts:["مَتَى","أَيْنَ","كَمْ"],a:1,why:"«أين» للمكان، و«متى» للزمان، و«كم» للعدد."}
+  );
+  CHALLENGES["g2_math"].push(
+    {type:"choice",q:"٤٥٦ + ٢٧٨ = ؟",opts:["٧٢٤","٧٣٤","٦٣٤"],a:1,why:"٤٥٦ + ٢٧٨ = ٧٣٤ — حملنا في الآحاد والعشرات."},
+    {type:"choice",q:"٥ × ٦ = ؟",opts:["٢٥","٣٠","٣٥"],a:1,why:"٥ × ٦ = ٣٠ من جدول ٥."},
+    {type:"choice",q:"ثلث ١٢ = ؟",opts:["٣","٤","٦"],a:1,why:"الثلث يعني نقسم على ٣: ١٢ ÷ ٣ = ٤."},
+    {type:"tf",q:"المكعب له ٦ أوجه.",a:true,why:"صح! المكعب ٦ أوجه و١٢ حرفًا و٨ رؤوس."},
+    {type:"choice",q:"١ متر = ___ سم",opts:["١٠","١٠٠","١٠٠٠"],a:1,why:"المتر الواحد فيه ١٠٠ سنتيمتر."},
+    {type:"choice",q:"٧٢٥ − ٣٤٨ = ؟",opts:["٣٧٧","٣٨٧","٤٧٧"],a:0,why:"٧٢٥ − ٣٤٨ = ٣٧٧ — استلفنا في الآحاد والعشرات."}
+  );
+  CHALLENGES["g2_english"].push(
+    {type:"choice",q:"<span class='en'>This is ___ apple.</span>",opts:["<span class='en'>an</span>","<span class='en'>a</span>","<span class='en'>are</span>"],a:0,why:"قبل كلمة بتبدأ بصوت متحرك زي apple بنستخدم an."},
+    {type:"tf",q:"<span class='en'>Sunday</span> يأتي بعد <span class='en'>Saturday</span>.",a:true,why:"صح! السبت Saturday وبعده الأحد Sunday."},
+    {type:"choice",q:"«أختي» بالإنجليزية:",opts:["<span class='en'>brother</span>","<span class='en'>sister</span>","<span class='en'>mother</span>"],a:1,why:"sister = أخت، وbrother = أخ، وmother = أم."},
+    {type:"dict",word:"Fish",lang:"en-US",q:"اسمع الكلمة واختارها:",opts:["<span class='en'>Fish</span>","<span class='en'>Bird</span>","<span class='en'>Cat</span>"],a:0,why:"الكلمة Fish — سمكة 🐟."},
+    {type:"choice",q:"<span class='en'>It's rainy. Take an ___.</span>",opts:["<span class='en'>umbrella</span>","<span class='en'>cap</span>","<span class='en'>T-shirt</span>"],a:0,why:"المطر بيحتاج مظلة: umbrella."},
+    {type:"order",q:"رتّب الكلمات وركّب الجملة:",parts:["I","like","milk"],en:true,why:"I like milk."}
+  );
+  CHALLENGES["g3_arabic"].push(
+    {type:"choice",q:"المبتدأ في «الْعِلْمُ نُورٌ»:",opts:["نُورٌ","الْعِلْمُ","لا يوجد مبتدأ"],a:1,why:"الجملة الاسمية بتبدأ بالمبتدأ: «العلمُ»، وخبره «نورٌ»."},
+    {type:"choice",q:"الهمزة في «سُئِلَ» اتكتبت على نبرة لأن أقوى الحركات:",opts:["الفتحة","الضمة","الكسرة"],a:2,why:"الكسرة أقوى الحركات، فالهمزة المتوسطة بتتكتب على نبرة: سُئِلَ."},
+    {type:"tf",q:"الألف اللينة في «رَمَى» أصلها واو.",a:false,why:"غلط! أصلها ياء (يرمي)، عشان كده اتكتبت مقصورة: رَمَى."},
+    {type:"choice",q:"جمع المذكر السالم بيُرفع بـ:",opts:["الضمة","الواو","الألف"],a:1,why:"جمع المذكر السالم يُرفع بالواو (معلمون) ويُنصب ويُجر بالياء (معلمين)."},
+    {type:"order",q:"رتّب الكلمات لتكوين جملة:",parts:["كَتَبَ","الطَّالِبُ","الدَّرْسَ"],why:"كَتَبَ الطَّالِبُ الدَّرْسَ — فعل وفاعل ومفعول به."},
+    {type:"dict",word:"مُؤْمِن",q:"اسمع الكلمة واختار كتابتها الصح:",opts:["مُؤْمِن","مُأْمِن","مُومِن"],a:0,why:"«مُؤْمِن»: الهمزة ساكنة بعد ضمة، فبتتكتب على واو."}
+  );
+  CHALLENGES["g3_math"].push(
+    {type:"choice",q:"٢٣٤ × ٣ = ؟",opts:["٦٠٢","٧٠٢","٧١٢"],a:1,why:"٢٣٤ × ٣ = ٧٠٢ بالتوزيع: ٦٠٠ + ٩٠ + ١٢."},
+    {type:"choice",q:"٨٥ ÷ ٤ = ؟",opts:["٢١ والباقي ١","٢٠ والباقي ٥","٢٢ والباقي ١"],a:0,why:"٤ × ٢١ = ٨٤ والباقي ١ — والباقي لازم يكون أصغر من المقسوم عليه."},
+    {type:"choice",q:"٢/٧ + ٣/٧ = ؟",opts:["٥/١٤","٥/٧","٦/٧"],a:1,why:"نفس المقام: بنجمع البسط بس: ٢ + ٣ = ٥ على ٧."},
+    {type:"tf",q:"الزاوية الحادة أكبر من الزاوية القائمة.",a:false,why:"غلط! الحادة أصغر من القائمة (٩٠ درجة)، والمنفرجة أكبر منها."},
+    {type:"choice",q:"٣ كم = ___ متر",opts:["٣٠٠","٣٠٠٠","٣٠"],a:1,why:"الكيلومتر فيه ١٠٠٠ متر، فـ٣ كم = ٣٠٠٠ متر."},
+    {type:"choice",q:"مساحة مستطيل ٨ سم × ٣ سم:",opts:["٢٢ سم²","١١ سم²","٢٤ سم²"],a:2,why:"المساحة = الطول × العرض = ٨ × ٣ = ٢٤ سم²."}
+  );
+  CHALLENGES["g3_english"].push(
+    {type:"choice",q:"<span class='en'>There ___ two books on the desk.</span>",opts:["<span class='en'>is</span>","<span class='en'>are</span>","<span class='en'>am</span>"],a:1,why:"مع الجمع (two books) بنستخدم There are."},
+    {type:"choice",q:"«مهندس» بالإنجليزية:",opts:["<span class='en'>doctor</span>","<span class='en'>engineer</span>","<span class='en'>farmer</span>"],a:1,why:"engineer = مهندس، وdoctor = طبيب، وfarmer = فلاح."},
+    {type:"tf",q:"<span class='en'>I like reading.</span> جملة صح.",a:true,why:"صح! بعد like بييجي الفعل مضاف له ing: reading."},
+    {type:"dict",word:"Lion",lang:"en-US",q:"اسمع الكلمة واختارها:",opts:["<span class='en'>Lion</span>","<span class='en'>Tiger</span>","<span class='en'>Monkey</span>"],a:0,why:"الكلمة Lion — أسد 🦁."},
+    {type:"choice",q:"<span class='en'>The elephant ___ got big ears.</span>",opts:["<span class='en'>have</span>","<span class='en'>has</span>","<span class='en'>are</span>"],a:1,why:"مع It وHe وShe بنستخدم has got."},
+    {type:"order",q:"رتّب الكلمات وركّب الجملة:",parts:["I","am","from","Egypt"],en:true,why:"I am from Egypt."}
+  );
+  CHALLENGES["g4_arabic"].push(
+    {type:"choice",q:"اسم كان في «كَانَ الْمَطَرُ غَزِيرًا»:",opts:["غَزِيرًا","الْمَطَرُ","كَانَ"],a:1,why:"اسم كان مرفوع: «المطرُ»، وخبرها «غزيرًا» منصوب."},
+    {type:"choice",q:"الجار والمجرور في «ذَهَبْتُ إِلَى الْمَدْرَسَةِ»:",opts:["ذَهَبْتُ","إِلَى الْمَدْرَسَةِ","لا يوجد"],a:1,why:"«إلى» حرف جر و«المدرسة» اسم مجرور — شبه جملة."},
+    {type:"choice",q:"أنهي جملة فيها أسلوب إنشائي (طلب)؟",opts:["الْعِلْمُ نُورٌ","اِقْرَأِ الْكِتَابَ","الْجَوُّ صَافٍ"],a:1,why:"«اقرأ» فعل أمر — أسلوب إنشائي طلبي. الباقي جمل خبرية."},
+    {type:"choice",q:"همزة «أَحْمَد» همزة:",opts:["وصل","قطع","متوسطة"],a:1,why:"همزة قطع: بتتكتب وبتتنطق في أول الكلام وفي وسطه."},
+    {type:"choice",q:"علامة الترقيم في آخر الجملة الاستفهامية:",opts:["النقطة","الفاصلة","علامة الاستفهام ؟"],a:2,why:"السؤال بينتهي بعلامة الاستفهام ؟."},
+    {type:"choice",q:"نوع الخبر في «الْكِتَابُ عَلَى الْمَكْتَبَةِ»:",opts:["مفرد","جملة اسمية","شبه جملة"],a:2,why:"«على المكتبة» جار ومجرور في محل رفع خبر — خبر شبه جملة."}
+  );
+  CHALLENGES["g4_math"].push(
+    {type:"choice",q:"١٥ × ١٢ =",opts:["١٧٠","١٨٠","١٥٠"],a:1,why:"١٥ × ١٢ = ١٥ × ١٠ + ١٥ × ٢ = ١٥٠ + ٣٠ = ١٨٠."},
+    {type:"choice",q:"٥٫٦ − ٢٫٨٥ =",opts:["٢٫٧٥","٢٫٨٥","٣٫٧٥"],a:0,why:"٥٫٦٠ − ٢٫٨٥ = ٢٫٧٥ — الفاصلة تحت الفاصلة."},
+    {type:"choice",q:"أنهي عدد مش من مضاعفات ٦؟",opts:["١٨","٢٤","٢٦"],a:2,why:"مضاعفات ٦: ٦، ١٢، ١٨، ٢٤، ٣٠… و٢٦ مش منها."},
+    {type:"choice",q:"محيط مربع طول ضلعه ٩ سم:",opts:["٣٦ سم","٨١ سم","١٨ سم"],a:0,why:"محيط المربع = الضلع × ٤ = ٣٦ سم. (٨١ دي مساحته.)"},
+    {type:"choice",q:"٣/٤ + ١/٤ =",opts:["٤/٨","١","١/٢"],a:1,why:"٣/٤ + ١/٤ = ٤/٤ = ١ صحيح."},
+    {type:"choice",q:"الزاوية اللي قياسها ١٢٠ درجة نوعها:",opts:["حادة","قائمة","منفرجة"],a:2,why:"أكبر من ٩٠ وأصغر من ١٨٠ — زاوية منفرجة."}
+  );
+  CHALLENGES["g4_english"].push(
+    {type:"choice",q:"Ahmed is from Egypt. He is ___.",opts:["Egypt","Egyptian","Egyptish"],a:1,why:"Egypt → Egyptian."},
+    {type:"choice",q:"1st in words:",opts:["oneth","first","one"],a:1,why:"1st = first."},
+    {type:"choice",q:"She ___ TV every evening.",opts:["watch","watchs","watches"],a:2,why:"She + verb-es: watches."},
+    {type:"choice",q:"6:30 is:",opts:["half past six","quarter past six","quarter to seven"],a:0,why:"6:30 = half past six."},
+    {type:"choice",q:"The giraffe is ___ than the horse.",opts:["tall","taller","more tall"],a:1,why:"Tall → taller than."},
+    {type:"choice",q:"Listen! The birds ___.",opts:["sings","is singing","are singing"],a:2,why:"Listen! والفاعل جمع (birds) → are singing."}
+  );
+  CHALLENGES["g5_arabic"].push(
+    {type:"choice",q:"اسم إنَّ في «إِنَّ الْعِلْمَ نَافِعٌ»:",opts:["نَافِعٌ","الْعِلْمَ","إِنَّ"],a:1,why:"إنَّ بتنصب المبتدأ وبيبقى اسمها: «العلمَ» منصوب، وخبرها «نافعٌ» مرفوع."},
+    {type:"choice",q:"المفعول المطلق في «ضَرَبْتُهُ ضَرْبَتَيْنِ» مبين لـ:",opts:["التوكيد","النوع","العدد"],a:2,why:"«ضربتين» بيبيّن عدد مرات الضرب — مفعول مطلق مبين للعدد."},
+    {type:"choice",q:"صاحب الحال في «جَاءَ الطَّالِبُ مَسْرُورًا»:",opts:["مَسْرُورًا","الطَّالِبُ","جَاءَ"],a:1,why:"الحال «مسرورًا» بيوصف هيئة صاحبها «الطالب» وقت ما جه."},
+    {type:"choice",q:"همزة «اسْم» همزة:",opts:["قطع","وصل","متطرفة"],a:1,why:"«اسم» من الأسماء العشرة اللي همزتها همزة وصل."},
+    {type:"choice",q:"نوع النعت في «رَأَيْتُ طَالِبًا يَذَاكِرُ بِجِدٍّ»:",opts:["مفرد","جملة","شبه جملة"],a:1,why:"جملة «يذاكر» جت بعد نكرة فهي نعت جملة."},
+    {type:"choice",q:"المنعوت في «قَرَأْتُ قِصَّةً مُشَوِّقَةً»:",opts:["قِصَّةً","مُشَوِّقَةً","قَرَأْتُ"],a:0,why:"«مشوّقةً» هي النعت، والمنعوت اللي بتوصفه هو «قصةً»."}
+  );
+  CHALLENGES["g5_math"].push(
+    {type:"choice",q:"٣٫٦ ÷ ٠٫٤ =",opts:["٩","٠٫٩","٩٠"],a:0,why:"بنضرب الطرفين في ١٠ عشان نخلص من الفاصلة: ٣٦ ÷ ٤ = ٩."},
+    {type:"choice",q:"٢/٣ × ٣/٤ =",opts:["١/٢","٥/٧","٨/٩"],a:0,why:"بنضرب البسط في البسط والمقام في المقام: ٦/١٢، وبالاختصار = ١/٢."},
+    {type:"choice",q:"(٥ + ٣) × ٢ =",opts:["١١","١٦","١٣"],a:1,why:"الأقواس الأول: ٥ + ٣ = ٨، وبعدين ٨ × ٢ = ١٦."},
+    {type:"choice",q:"حجم مكعب طول ضلعه ٣ سم:",opts:["٩ سم³","٢٧ سم³","١٨ سم³"],a:1,why:"حجم المكعب = الضلع × نفسه × نفسه = ٣ × ٣ × ٣ = ٢٧ سم³."},
+    {type:"choice",q:"مساحة مثلث قاعدته ١٠ سم وارتفاعه ٦ سم:",opts:["٦٠ سم²","٣٠ سم²","١٦ سم²"],a:1,why:"مساحة المثلث = نصف القاعدة × الارتفاع = ٥ × ٦ = ٣٠ سم²."},
+    {type:"choice",q:"النسبة ٤ : ٦ في أبسط صورة:",opts:["٢ : ٣","٤ : ٦","١ : ٢"],a:0,why:"بنقسم الطرفين على ٢: ٢ : ٣."}
+  );
+  CHALLENGES["g5_english"].push(
+    {type:"choice",q:"___ he play football on Fridays?",opts:["Do","Does","Is"],a:1,why:"مع he وshe وit بنستخدم Does في السؤال."},
+    {type:"choice",q:"A baker works in a ___.",opts:["bakery","hospital","farm"],a:0,why:"الخباز بيشتغل في المخبز: bakery."},
+    {type:"choice",q:"She is ill. She ___ rest.",opts:["should","shoulds","shoulder"],a:0,why:"للنصيحة بنستخدم should + الفعل على طول."},
+    {type:"choice",q:"The past of \"visit\":",opts:["visitted","visited","visiting"],a:1,why:"visit + ed = visited."},
+    {type:"choice",q:"آخر كلمة في تسلسل أحداث القصة:",opts:["First","Then","Finally"],a:2,why:"Finally = في النهاية، وFirst = أولًا، وThen = بعد كده."},
+    {type:"choice",q:"The bank is ___ the school. (بجوار)",opts:["next to","far","between to"],a:0,why:"بجوار = next to."}
+  );
+  CHALLENGES["g6_arabic"].push(
+    {type:"choice",q:"التمييز في «زَادَ الطَّالِبُ عِلْمًا»:",opts:["الطَّالِبُ","عِلْمًا","زَادَ"],a:1,why:"«علمًا» تمييز منصوب بيوضّح المقصود بـ«زاد»."},
+    {type:"choice",q:"المنادى في «يَا مُحَمَّدُ» نوعه:",opts:["مضاف","علم مفرد","نكرة غير مقصودة"],a:1,why:"«محمد» علم مفرد — المنادى مبني على الضم في محل نصب."},
+    {type:"choice",q:"المفعول لأجله بيجاوب عن سؤال:",opts:["ماذا؟","لماذا؟","أين؟"],a:1,why:"المفعول لأجله بيبيّن سبب حدوث الفعل: لماذا؟"},
+    {type:"choice",q:"التوكيد المعنوي في «قَرَأْتُ الْكِتَابَ كُلَّهُ»:",opts:["الْكِتَابَ","كُلَّهُ","قَرَأْتُ"],a:1,why:"«كلَّه» توكيد معنوي بيتبع المؤكَّد «الكتابَ» في النصب."},
+    {type:"choice",q:"الألف اللينة في «عَصَا» اتكتبت قائمة لأن أصلها:",opts:["ياء","واو","همزة"],a:1,why:"أصلها واو — بدليل المثنى «عصوان» — فاتكتبت ألفًا قائمة."},
+    {type:"choice",q:"إعراب «الْمُجْتَهِدَ» في «رَأَيْتُ الطَّالِبَ الْمُجْتَهِدَ»:",opts:["فاعل","مفعول به","نعت منصوب"],a:2,why:"«المجتهدَ» نعت بيتبع المنعوت «الطالبَ» في النصب."}
+  );
+  CHALLENGES["g6_math"].push(
+    {type:"choice",q:"(٥-) + ٣ =",opts:["٢-","٨-","٢"],a:0,why:"على خط الأعداد: من ٥- بنتحرك ٣ خطوات لليمين فنوصل لـ٢-."},
+    {type:"choice",q:"٥٠٪ من ٨٠ =",opts:["٣٠","٤٠","٥٠"],a:1,why:"٥٠٪ يعني النصف: نصف ٨٠ = ٤٠."},
+    {type:"choice",q:"٣س = ٢١ → س =",opts:["٦","٧","٨"],a:1,why:"بنقسم الطرفين على ٣: س = ٢١ ÷ ٣ = ٧."},
+    {type:"choice",q:"مساحة دائرة نق = ١٠ سم (ط = ٣٫١٤):",opts:["٣١٫٤ سم²","٣١٤ سم²","٦٢٫٨ سم²"],a:1,why:"المساحة = ط × نق² = ٣٫١٤ × ١٠٠ = ٣١٤ سم². (٦٢٫٨ ده المحيط.)"},
+    {type:"choice",q:"متوسط البيانات ٥، ٧، ٩، ٧:",opts:["٧","٨","٩"],a:0,why:"المجموع ٢٨ وعددها ٤: ٢٨ ÷ ٤ = ٧."},
+    {type:"choice",q:"٤² + ٣² =",opts:["٢٥","١٤","٤٩"],a:0,why:"٤² = ١٦ و٣² = ٩، ومجموعهم ٢٥."}
+  );
+  CHALLENGES["g6_english"].push(
+    {type:"choice",q:"The past of \"go\":",opts:["goed","went","gone to school"],a:1,why:"go → went (فعل غير منتظم)."},
+    {type:"choice",q:"I ___ visit the museum tomorrow. (خطة للمستقبل)",opts:["am going to","goes","went"],a:0,why:"للخطة المستقبلية: am going to + الفعل."},
+    {type:"choice",q:"You ___ save water. (لازم)",opts:["must","musts","yesterday"],a:0,why:"must بييجي بعدها الفعل على طول من غير إضافات."},
+    {type:"choice",q:"The Pyramids are in ___.",opts:["Giza","Luxor port","the sea"],a:0,why:"الأهرامات في الجيزة: Giza."},
+    {type:"choice",q:"She ___ her homework yesterday.",opts:["do","did","does"],a:1,why:"yesterday → زمن الماضي: did."},
+    {type:"choice",q:"We play football in a ___.",opts:["stadium","library","kitchen"],a:0,why:"كرة القدم بتتلعب في الاستاد: stadium."}
+  );
+
+  /* ---------- ٢) خريطة المغامرة في الصفحة الرئيسية ---------- */
+  var UNIT_DEFS_J = {"1_arabic":[{"name":"المحور الأول: من أكون؟","ids":["ar1","ar2","L03","L04","L05","L06","L07"]},{"name":"المحور الثاني: العالم من حولي","ids":["L08","L09","L10","L11","L12","L13","L14"]},{"name":"المحور الثالث: كيف يعمل العالم؟","ids":["L15","L16","L17","L18","L19","L20","L21"]},{"name":"المحور الرابع: التواصل","ids":["L22","L23","L24","L25","L26","L27","L28","ar3","arRead"]}],"1_math":[{"name":"الوحدة الأولى: الأعداد حتى ١٠٠","ids":["ma1","ma4","ma5"]},{"name":"الوحدة الثانية: الجمع والطرح","ids":["ma2","ma6","ma3","ma7"]},{"name":"الوحدة الثالثة: الهندسة والقياس","ids":["ma8","ma9"]},{"name":"الوحدة الرابعة: الأنماط والنقود والوقت","ids":["ma10","ma11","ma12"]}],"1_english":[{"name":"Unit 1: Hello! — التحيات والحروف","ids":["en1","en3"]},{"name":"Unit 2: My Family — عائلتي","ids":["en4"]},{"name":"Unit 3: My School Bag — في المدرسة","ids":["en5","en2"]},{"name":"Unit 4: This Is Me — جسمي","ids":["en6"]},{"name":"Unit 5: Yummy Food — الطعام","ids":["en7"]},{"name":"Unit 6: Animals & Toys — الحيوانات والألعاب","ids":["en8","en9"]},{"name":"Unit 7: Colors & Numbers — الألوان والأعداد","ids":["en10","en11"]}],"2_arabic":[{"name":"المحور الأول: من أكون؟","ids":["g2ar1","g2ar2","g2ar3","g2ar4"]},{"name":"المحور الثاني: العالم من حولي","ids":["g2ar5","g2ar6","g2ar7","g2ar8"]},{"name":"المحور الثالث: كيف يعمل العالم؟","ids":["g2ar9","g2ar10"]},{"name":"المحور الرابع: التواصل","ids":["g2ar11","g2ar12"]}],"2_math":[{"name":"الوحدة الأولى: الأعداد حتى ١٠٠٠","ids":["g2ma1","g2ma2"]},{"name":"الوحدة الثانية: الجمع والطرح حتى ١٠٠٠","ids":["g2ma3","g2ma4"]},{"name":"الوحدة الثالثة: الضرب والقسمة","ids":["g2ma5","g2ma6","g2ma7"]},{"name":"الوحدة الرابعة: الكسور","ids":["g2ma8"]},{"name":"الوحدة الخامسة: الهندسة والقياس","ids":["g2ma9","g2ma10"]},{"name":"الوحدة السادسة: النقود والبيانات","ids":["g2ma11","g2ma12"]}],"2_english":[{"name":"Unit 1: Hello Again! & Numbers — التحيات والأعداد","ids":["g2en1","g2en2"]},{"name":"Unit 2: Colors, Shapes & Family — الألوان والأشكال والعائلة","ids":["g2en3","g2en4"]},{"name":"Unit 3: At School & My Body — المدرسة والجسم","ids":["g2en5","g2en6"]},{"name":"Unit 4: Animals & Food — الحيوانات والطعام","ids":["g2en7","g2en8"]},{"name":"Unit 5: I Can…! Days & Weather — الأيام والطقس","ids":["g2en9","g2en10"]}],"3_arabic":[{"name":"المحور الأول: من أكون؟","ids":["g3ar1","g3ar2","g3ar3","g3ar4"]},{"name":"المحور الثاني: العالم من حولي","ids":["g3ar5","g3ar6","g3ar7","g3ar8"]},{"name":"المحور الثالث: كيف يعمل العالم؟","ids":["g3ar9","g3ar10"]},{"name":"المحور الرابع: التواصل","ids":["g3ar11","g3ar12"]}],"3_math":[{"name":"الوحدة الأولى: الأعداد حتى ١٠٠ ألف وعملياتها","ids":["g3ma1","g3ma2"]},{"name":"الوحدة الثانية: الضرب والقسمة","ids":["g3ma3","g3ma4"]},{"name":"الوحدة الثالثة: الكسور","ids":["g3ma5","g3ma6"]},{"name":"الوحدة الرابعة: المحيط والمساحة","ids":["g3ma7","g3ma8"]},{"name":"الوحدة الخامسة: الهندسة والقياس والبيانات","ids":["g3ma9","g3ma10","g3ma11","g3ma12"]}],"3_english":[{"name":"Unit 1: Welcome Back! & Numbers — أهلًا من جديد والأعداد","ids":["g3en1","g3en2"]},{"name":"Unit 2: Jobs & My School Day — المهن ويومي في المدرسة","ids":["g3en3","g3en4"]},{"name":"Unit 3: Health & Wild Animals — الصحة والحيوانات البرية","ids":["g3en5","g3en6"]},{"name":"Unit 4: Food & Around Town — الطعام وفي المدينة","ids":["g3en7","g3en8"]},{"name":"Unit 5: Hobbies & Seasons — الهوايات والفصول","ids":["g3en9","g3en10"]}],"4_arabic":[{"name":"المحور الأول: أكتشف ذاتي","ids":["g4ar1","g4ar2","g4ar3","g4ar4","g4ar5","g4ar6"]},{"name":"المحور الثاني: علاقتي مع الآخرين","ids":["g4ar7","g4ar8","g4ar9","g4ar10","g4ar11","g4ar12"]}],"4_math":[{"name":"الوحدة الأولى: القيمة المكانية","ids":["g4ma1","g4ma2"]},{"name":"الوحدة الثانية: استراتيجيات عمليتي الجمع والطرح","ids":["g4ma3"]},{"name":"الوحدة الثالثة: عمليتا الضرب والقسمة","ids":["g4ma4","g4ma5"]},{"name":"الوحدة الرابعة: العوامل والمضاعفات","ids":["g4ma6"]},{"name":"الوحدة الخامسة: الكسور والأعداد العشرية","ids":["g4ma7","g4ma8","g4ma9","g4ma10"]},{"name":"الوحدة السادسة: الهندسة والمساحة والمحيط","ids":["g4ma11","g4ma12"]}],"4_english":[{"name":"Unit 1: Countries & Ordinal Numbers — البلاد والأعداد الترتيبية","ids":["g4en1","g4en2"]},{"name":"Unit 2: Describing People & Telling the Time — وصف الأشخاص والوقت","ids":["g4en3","g4en4"]},{"name":"Unit 3: My Daily Routine & Food — روتيني اليومي والطعام","ids":["g4en5","g4en6"]},{"name":"Unit 4: Animals, Habitats & Places — الحيوانات والأماكن","ids":["g4en7","g4en8"]},{"name":"Unit 5: Free Time & Weather — وقت الفراغ والطقس","ids":["g4en9","g4en10"]}],"5_arabic":[{"name":"الوحدة الأولى: النواسخ — كان وإنَّ وأخواتهما","ids":["g5ar1","g5ar2"]},{"name":"الوحدة الثانية: المفعول المطلق والحال","ids":["g5ar3","g5ar4"]},{"name":"الوحدة الثالثة: التوابع — النعت والعطف والبدل","ids":["g5ar5","g5ar6","g5ar7"]},{"name":"الوحدة الرابعة: الإملاء — الهمزات","ids":["g5ar8","g5ar9"]},{"name":"الوحدة الخامسة: الأساليب والنصوص والتعبير","ids":["g5ar10","g5ar11","g5ar12"]}],"5_math":[{"name":"الوحدة الأولى: الأعداد العشرية وعملياتها","ids":["g5ma1","g5ma2","g5ma3"]},{"name":"الوحدة الثانية: الكسور وعملياتها","ids":["g5ma4","g5ma5"]},{"name":"الوحدة الثالثة: الجبر — ترتيب العمليات والمعادلات","ids":["g5ma6","g5ma7"]},{"name":"الوحدة الرابعة: الهندسة والقياس","ids":["g5ma8","g5ma9","g5ma10","g5ma11"]},{"name":"الوحدة الخامسة: النسبة والمتوسط الحسابي","ids":["g5ma12"]}],"5_english":[{"name":"Unit 1: Present Simple & Jobs — المضارع البسيط والمهن","ids":["g5en1","g5en2","g5en3"]},{"name":"Unit 2: Healthy Habits & Comparing — العادات الصحية والمقارنة","ids":["g5en4","g5en5"]},{"name":"Unit 3: Asking the Way & Past Simple — الاتجاهات والماضي البسيط","ids":["g5en6","g5en7","g5en8"]},{"name":"Unit 4: Stories & Our Environment — القصص والبيئة","ids":["g5en9","g5en10"]}],"6_arabic":[{"name":"الوحدة الأولى: المفعول لأجله والتمييز","ids":["g6ar1","g6ar2"]},{"name":"الوحدة الثانية: التوابع — التوكيد والبدل","ids":["g6ar3","g6ar4"]},{"name":"الوحدة الثالثة: النداء والإعراب الشامل","ids":["g6ar5","g6ar6","g6ar7"]},{"name":"الوحدة الرابعة: الإملاء والقراءة والتعبير","ids":["g6ar8","g6ar9","g6ar10","g6ar11"]},{"name":"الوحدة الخامسة: المراجعة النهائية","ids":["g6ar12"]}],"6_math":[{"name":"الوحدة الأولى: الأعداد الصحيحة وعملياتها","ids":["g6ma1","g6ma2","g6ma3"]},{"name":"الوحدة الثانية: الأسس والجذور","ids":["g6ma4"]},{"name":"الوحدة الثالثة: النسبة والتناسب","ids":["g6ma5","g6ma6","g6ma7"]},{"name":"الوحدة الرابعة: الجبر — المقادير والمعادلات والمتباينات","ids":["g6ma8","g6ma9"]},{"name":"الوحدة الخامسة: الهندسة — الدائرة والحجوم","ids":["g6ma10","g6ma11"]},{"name":"الوحدة السادسة: الإحصاء","ids":["g6ma12"]}],"6_english":[{"name":"Unit 1: Future Plans & Past Simple — خطط المستقبل والماضي","ids":["g6en1","g6en2"]},{"name":"Unit 2: Stories & Technology — القصص والتكنولوجيا","ids":["g6en3","g6en4"]},{"name":"Unit 3: Health & Saving Energy — الصحة وتوفير الطاقة","ids":["g6en5","g6en6"]},{"name":"Unit 4: Travel & Famous Places in Egypt — السفر وأماكن مصر المشهورة","ids":["g6en7","g6en8"]},{"name":"Unit 5: Sports & Final Revision — الرياضة والمراجعة النهائية","ids":["g6en9","g6en10"]}]};
+  function jStars(l) { return l.exercises.filter(function (ex, i) { return store.stars[l.id + ":" + i]; }).length; }
+  function jDone(l) { return !!((store.lessonsDone || {})[l.id]) || jStars(l) === l.exercises.length; }
+  function jUnitsFor(g, subId) {
+    var all = LESSONS.filter(function (l) { return l.subject === subId && gradeOf(l) === g; });
+    var defs = UNIT_DEFS_J[g + "_" + subId];
+    if (!defs) return [{ name: "دروس المادة", lessons: all }];
+    var byId = {};
+    all.forEach(function (l) { byId[l.id] = l; });
+    var used = {}, units = [];
+    defs.forEach(function (d) {
+      var ls = d.ids.map(function (id) { return byId[id]; }).filter(Boolean);
+      ls.sort(function (x, y) { return all.indexOf(x) - all.indexOf(y); });
+      ls.forEach(function (l) { used[l.id] = 1; });
+      if (ls.length) units.push({ name: d.name, lessons: ls });
+    });
+    var rest = all.filter(function (l) { return !used[l.id]; });
+    if (rest.length) units.push({ name: "دروس إضافية", lessons: rest });
+    return units;
+  }
+  function renderJourney() {
+    var box = $("journeyBox");
+    if (!box) return;
+    var sub = $("journeySub");
+    if (sub) sub.textContent = "رحلتك في الصف " + GRADE_NAMES[curGrade] + " وحدة وحدة بالترتيب — المحطة الخضرا خلّصتها، واللي عليها 📍 هي مكانك دلوقتي، والمقفولة بتفتح لما تخلّص اللي قبلها. دوس على أي محطة مفتوحة وكمّل من عندها!";
+    box.innerHTML = "";
+    SUBJECTS.forEach(function (s) {
+      var lessons = LESSONS.filter(function (l) { return l.subject === s.id && gradeOf(l) === curGrade; });
+      if (!lessons.length) return;
+      var openById = {}, prevDone = true;
+      lessons.forEach(function (l) { openById[l.id] = prevDone; if (!jDone(l)) prevDone = false; });
+      var track = document.createElement("div");
+      track.className = "j-track";
+      var doneN = lessons.filter(jDone).length;
+      var head = document.createElement("div");
+      head.className = "j-track-head";
+      head.innerHTML = "<span>" + s.emoji + " " + s.name + "</span><span class='j-track-prog'>خلّصت " + toAr(doneN) + " من " + toAr(lessons.length) + " درس</span>";
+      track.appendChild(head);
+      var path = document.createElement("div");
+      path.className = "j-path";
+      var hereUsed = false;
+      jUnitsFor(curGrade, s.id).forEach(function (u) {
+        var uDone = u.lessons.every(jDone);
+        var uOpen = u.lessons.some(function (l) { return openById[l.id]; });
+        var uHere = !uDone && !hereUsed && u.lessons.some(function (l) { return openById[l.id] && !jDone(l); });
+        if (uHere) hereUsed = true;
+        var st = document.createElement("button");
+        st.type = "button";
+        st.className = "j-station" + (uDone ? " done" : uHere ? " here" : uOpen ? " open" : " locked");
+        st.setAttribute("aria-label", u.name + " — " + s.name);
+        st.innerHTML = "<span class='j-ic' aria-hidden='true'>" + (uDone ? "★" : uHere ? "📍" : uOpen ? "🚶" : "🔒") + "</span>" +
+          "<span class='j-nm'>" + u.name + "</span>" +
+          "<span class='j-st'>" + (uDone ? "خلّصتها! ★" : uHere ? "إنت هنا — كمّل!" : uOpen ? "مفتوحة — ادخل" : "مقفولة") + "</span>";
+        st.addEventListener("click", function () {
+          if (!uOpen) { toast("🔒 الوحدة دي مقفولة — خلّص الوحدات اللي قبلها في " + s.name + " الأول يا بطل!"); return; }
+          var target = u.lessons.filter(function (l) { return openById[l.id] && !jDone(l); })[0] || u.lessons[0];
+          openLesson(target.id);
+        });
+        path.appendChild(st);
+      });
+      track.appendChild(path);
+      box.appendChild(track);
+    });
+  }
+
+  /* ---------- ٣) تحدي الأسبوع ---------- */
+  store.weeklyByGrade = store.weeklyByGrade || {};
+  store.weeklyBadges = store.weeklyBadges || {};
+  save();
+  function isoWeekKey(d) {
+    var date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    var dayNum = (date.getUTCDay() + 6) % 7;
+    date.setUTCDate(date.getUTCDate() - dayNum + 3);
+    var year = date.getUTCFullYear();
+    var firstThu = new Date(Date.UTC(year, 0, 4));
+    var fday = (firstThu.getUTCDay() + 6) % 7;
+    firstThu.setUTCDate(firstThu.getUTCDate() - fday + 3);
+    var week = 1 + Math.round((date - firstThu) / 604800000);
+    return { key: year + "-W" + week, num: week, year: year };
+  }
+  function hashStr(s) {
+    var h = 2166136261;
+    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function rng(seed) {
+    return function () {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function shuffled(arr, rand) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(rand() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }
+  /* اختيار أسئلة الأسبوع: من بنك تمارين الصف الحالي نفسه — ٤ عربي + ٣ رياضيات + ٣ إنجليزي،
+     متخلطين ببذرة ثابتة على (رقم الأسبوع + الصف + المادة) فالأسئلة ثابتة طول الأسبوع وبتتغير بعده */
+  function weeklyPool() {
+    var wk = isoWeekKey(new Date());
+    var picks = { arabic: 4, math: 3, english: 3 };
+    var bySub = {};
+    SUBJECTS.forEach(function (s) {
+      var pool = [];
+      LESSONS.filter(function (l) { return l.subject === s.id && gradeOf(l) === curGrade; }).forEach(function (l) {
+        l.exercises.forEach(function (ex) {
+          if (ex.type === "choice" || ex.type === "tf" || ex.type === "dict") pool.push(ex);
+        });
+      });
+      bySub[s.id] = shuffled(pool, rng(hashStr(wk.key + "|" + curGrade + "|" + s.id))).slice(0, picks[s.id]);
+    });
+    var order = ["arabic", "math", "arabic", "english", "arabic", "math", "english", "arabic", "math", "english"];
+    var idx = { arabic: 0, math: 0, english: 0 }, out = [];
+    order.forEach(function (id) { var q = bySub[id][idx[id]++]; if (q) out.push(q); });
+    return out;
+  }
+  function weeklyDoneRec() {
+    var rec = store.weeklyByGrade[curGrade];
+    return rec && rec.key === isoWeekKey(new Date()).key ? rec : null;
+  }
+  function nextMonday() {
+    var d = new Date();
+    d.setHours(0, 0, 0, 0);
+    var add = (8 - d.getDay()) % 7;
+    if (add === 0) add = 7;
+    d.setDate(d.getDate() + add);
+    return d;
+  }
+  function countdownTxt() {
+    var ms = nextMonday() - Date.now();
+    var totalMin = Math.floor(ms / 60000);
+    var days = Math.floor(totalMin / 1440), hrs = Math.floor(totalMin % 1440 / 60), mins = totalMin % 60;
+    function hrsTxt(h) {
+      return h === 1 ? "ساعة" : h === 2 ? "ساعتين" : h <= 10 ? toAr(h) + " ساعات" : toAr(h) + " ساعة";
+    }
+    if (days === 0) {
+      /* فاضل أقل من يوم — يبقى الاتنين الجاي هو بكره */
+      if (hrs === 0) return "التحدي الجاي بيفتح بكره — فاضل " + (mins <= 1 ? "دقيقة واحدة" : toAr(mins) + " دقيقة") + " بس!";
+      return "التحدي الجاي بكره — فاضل " + hrsTxt(hrs) + " بس!";
+    }
+    var dtxt = days === 1 ? "يوم" : days === 2 ? "يومين" : toAr(days) + " أيام";
+    return "التحدي الجاي بعد " + dtxt + (hrs > 0 ? " و" + hrsTxt(hrs) : "") + " — بيفتح يوم الاتنين بأسئلة جديدة.";
+  }
+  function renderWeekly() {
+    var btn = $("weeklyBtn"), st = $("weeklyStatus"), cnt = $("weeklyCount"), bg = $("weeklyBadges");
+    if (!btn || !st) return;
+    var wk = isoWeekKey(new Date());
+    var badges = Object.keys(store.weeklyBadges || {}).sort();
+    if (bg) bg.innerHTML = badges.length
+      ? badges.map(function (k) { var p = k.split("-W"); return "<span class='wk-badge'>🏅 شارة أسبوع " + toAr(p[1] || "") + "</span>"; }).join("")
+      : "<span class='prog-txt'>لسه مفيش شارات أسبوع — خلّص أول تحدي أسبوعي وخد أول شارة!</span>";
+    var done = weeklyDoneRec();
+    if (done) {
+      st.innerHTML = "خلّصت تحدي الأسبوع ده خلاص: جبت <b>" + toAr(done.score) + " من " + toAr(done.total) + " ★</b> وخدت شارة الأسبوع 🏅";
+      btn.disabled = true;
+      btn.textContent = "✔ خلّصت تحدي الأسبوع";
+      if (cnt) cnt.textContent = countdownTxt();
+    } else {
+      st.innerHTML = "تحدي الأسبوع ده جاهز! ١٠ أسئلة جديدة من مواد الصف " + GRADE_NAMES[curGrade] + " التلاتة — كل سؤال له ٢٠ ثانية، وبيتلعب مرة واحدة بس في الأسبوع. خلّصه وخد شارة الأسبوع ونجوم!";
+      btn.disabled = false;
+      btn.textContent = "ابدأ تحدي الأسبوع";
+      if (cnt) cnt.textContent = "دي أسئلة أسبوع رقم " + toAr(wk.num) + " — وبتتغير كل أسبوع. " + countdownTxt();
+    }
+  }
+  var wkState = null, wkTimer = null, wkDelay = null;
+  function startWeekly() {
+    if (weeklyDoneRec()) { renderWeekly(); return; }
+    var qs = weeklyPool();
+    if (!qs.length) return;
+    clearInterval(wkTimer); clearTimeout(wkDelay);
+    wkState = { idx: 0, score: 0, answers: [], qs: qs, key: isoWeekKey(new Date()).key };
+    /* حماية لزر رجوع شاشة التحدي: يلاقي حالة تحدي سليمة لو الطفل دوسه وهو في تحدي الأسبوع */
+    try { chState = { subId: "arabic", idx: 0, score: 0, answers: [] }; } catch (e) {}
+    $("challengeTitle").textContent = "🏆 تحدي الأسبوع — الصف " + GRADE_NAMES[curGrade];
+    var body = $("challengeBody");
+    body.innerHTML = "<div class='card challenge-intro'>" +
+      "<div class='big'>🏆</div>" +
+      "<h3 style='font-size:26px;margin:6px 0'>تحدي الأسبوع — القواعد</h3>" +
+      "<p>" + toAr(qs.length) + " أسئلة من العربي والرياضيات والإنجليزي من دروس صفّك. كل سؤال له <b>٢٠ ثانية</b> بس، ولو الوقت خلص السؤال بيتحسب غلط وهنعدّي للي بعده! كل إجابة صح = نجمة ★. التحدي بيتلعب <b>مرة واحدة بس في الأسبوع</b> — ولو خلّصته هتاخد شارة الأسبوع 🏅</p>" +
+      "<button class='btn sun' type='button' id='wkGo' style='margin-top:12px'>أنا جاهز… ابدأ!</button></div>";
+    $("wkGo").addEventListener("click", wkQuestion);
+    show("view-challenge");
+  }
+  function wkRightLabel(q) { return q.type === "tf" ? (q.a ? "صح" : "غلط") : stripTags(q.opts[q.a]); }
+  function wkQuestion() {
+    var q = wkState.qs[wkState.idx];
+    var body = $("challengeBody");
+    var inner = "<div class='card'>" +
+      "<div style='display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-weight:800;color:var(--ink-soft)'><span>سؤال " + toAr(wkState.idx + 1) + " من " + toAr(wkState.qs.length) + "</span><span class='timer-num' id='wkTime'>⏱ " + toAr(20) + " ثانية</span><span>نتيجتي: ★ " + toAr(wkState.score) + "</span></div>" +
+      "<div class='timer-wrap'><div class='timer-bar' id='wkBar'></div></div>";
+    if (q.type === "dict") inner += "<button class='listen-btn' type='button' id='wkListen'>🔊 اسمع الكلمة</button>";
+    inner += "<div class='ex-q'>" + q.q + "</div><div class='opts' id='wkOpts'></div><div class='ex-fb' id='wkFb' role='status'></div></div>";
+    body.innerHTML = inner;
+    if (q.type === "dict") $("wkListen").addEventListener("click", function () { speak(q.word, q.lang); });
+    var bar = $("wkBar"), timeEl = $("wkTime"), optsBox = $("wkOpts");
+    var answered = false;
+    function advance(result) {
+      clearInterval(wkTimer); clearTimeout(wkDelay);
+      if (result === 1) wkState.score++;
+      wkState.idx++;
+      try { if (typeof chState !== "undefined" && chState) chState.idx = wkState.idx; } catch (e) {}
+      if (wkState.idx < wkState.qs.length) wkQuestion(); else wkFinish();
+    }
+    var deadline = Date.now() + 20000;
+    bar.style.width = "100%";
+    wkTimer = setInterval(function () {
+      if (answered) { clearInterval(wkTimer); return; }
+      var remain = Math.max(0, deadline - Date.now());
+      bar.style.width = (remain / 20000 * 100) + "%";
+      if (timeEl) timeEl.textContent = "⏱ " + toAr(Math.ceil(remain / 1000)) + " ثانية";
+      if (remain <= 0) {
+        answered = true;
+        clearInterval(wkTimer);
+        optsBox.querySelectorAll(".opt").forEach(function (x) { x.disabled = true; });
+        wkState.answers.push({ q: q.q, correct: false, rightLabel: wkRightLabel(q), why: q.why });
+        var fb = $("wkFb");
+        if (fb) { fb.className = "ex-fb show retry"; fb.textContent = "⏰ انتهى الوقت! السؤال ده اتحسب غلط — والإجابة الصح هتشوفها في المراجعة آخر التحدي."; }
+        wkDelay = setTimeout(function () { if (!$("view-challenge").hidden) advance(0); }, 1400);
+      }
+    }, 200);
+    function pick(val) {
+      if (answered) return;
+      answered = true;
+      clearInterval(wkTimer);
+      var correct = val === q.a;
+      wkState.answers.push({ q: q.q, correct: correct, rightLabel: wkRightLabel(q), why: q.why });
+      if (correct) { try { awardStar("wk:" + curGrade + ":" + wkState.key + ":" + wkState.idx, body.querySelector(".card")); } catch (e) {} }
+      advance(correct ? 1 : 0);
+    }
+    if (q.type === "choice" || q.type === "dict") {
+      shuffle(q.opts.map(function (t, i) { return { t: t, i: i }; })).forEach(function (oo) {
+        var b = document.createElement("button");
+        b.type = "button"; b.className = "opt"; b.innerHTML = oo.t;
+        b.addEventListener("click", function () { pick(oo.i); });
+        optsBox.appendChild(b);
+      });
+    } else if (q.type === "tf") {
+      [["✓ صح", true], ["✗ غلط", false]].forEach(function (pair) {
+        var b = document.createElement("button");
+        b.type = "button"; b.className = "opt"; b.textContent = pair[0];
+        b.addEventListener("click", function () { pick(pair[1]); });
+        optsBox.appendChild(b);
+      });
+    }
+  }
+  function wkFinish() {
+    if (!store.weeklyByGrade) store.weeklyByGrade = {};
+    store.weeklyByGrade[curGrade] = { key: wkState.key, grade: curGrade, score: wkState.score, total: wkState.qs.length, ts: Date.now() };
+    if (!store.weeklyBadges) store.weeklyBadges = {};
+    var newBadge = !store.weeklyBadges[wkState.key];
+    store.weeklyBadges[wkState.key] = 1;
+    save();
+    var qs = wkState.qs;
+    var msg = wkState.score === qs.length ? "مذهل! جبت العلامة الكاملة في تحدي الأسبوع… إنت بطل بجد 🏆" :
+              wkState.score >= Math.ceil(qs.length / 2) ? "برافو! نتيجة جميلة في تحدي الأسبوع 💪" :
+              "محاولة شجاعة! راجع الإجابات تحت، والأسبوع الجاي فيه تحدي جديد بأسئلة جديدة 🌟";
+    var body = $("challengeBody");
+    body.innerHTML = "<div class='card challenge-intro'>" +
+      "<div class='big'>🏅</div>" +
+      "<h3 style='font-size:28px;margin:6px 0'>نتيجتك: " + toAr(wkState.score) + " من " + toAr(qs.length) + " ★</h3>" +
+      "<p>" + msg + "</p>" +
+      "<p>" + (newBadge ? "وكسبت <b>شارة تحدي الأسبوع</b> 🏅 " : "") + "ونجوم التحدي اتضافت لنجومك اللي فوق — مجموع نجومك دلوقتي: <b>★ " + toAr(starTotal()) + "</b></p>" +
+      "<p>" + countdownTxt() + "</p>" +
+      "<div style='display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px'>" +
+        "<button class='btn' type='button' id='wkHome'>رجوع للرئيسية</button>" +
+      "</div></div>" +
+      "<h3 style='font-size:23px;margin:22px 0 10px'>الإجابات — راجع وتعلم</h3>" +
+      "<div>" + wkState.answers.map(function (a) {
+        return "<div class='review-item'>" + (a.correct ? "✓" : "✗") + " " + a.q + "<br /><span class='ans'>الإجابة الصح: " + a.rightLabel + "</span><br /><small>" + a.why + "</small></div>";
+      }).join("") + "</div>";
+    $("wkHome").addEventListener("click", function () { goHome(); });
+    if (wkState.score >= Math.ceil(qs.length / 2) && window.__celebrateBig) window.__celebrateBig();
+    renderWeekly();
+  }
+  if ($("weeklyBtn")) $("weeklyBtn").addEventListener("click", startWeekly);
+
+  /* ---------- ربط إعادة الرسم مع التنقل وتغيير الصف ---------- */
+  renderJourney();
+  renderWeekly();
+  if (typeof setGrade === "function") {
+    var _setGradeW = setGrade;
+    setGrade = function (n, s) { _setGradeW(n, s); renderJourney(); renderWeekly(); };
+  }
+  if (typeof goHome === "function") {
+    var _goHomeW = goHome;
+    goHome = function () { _goHomeW(); renderJourney(); renderWeekly(); };
+  }
+  var homeView = $("view-home");
+  if (homeView && "MutationObserver" in window) {
+    new MutationObserver(function () { if (!homeView.hidden) { renderJourney(); renderWeekly(); } })
+      .observe(homeView, { attributes: true, attributeFilter: ["hidden"] });
+  }
+  /* العدّاد التنازلي بيتحدّث لوحده كل دقيقة — قبل اللعب وبعده — من غير ريفريش */
+  setInterval(function () { renderWeekly(); }, 60000);
+})();
+</script>
+
 </body>
 </html>
