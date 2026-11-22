@@ -944,6 +944,31 @@
           <div class="tch-error" id="shareError" role="alert"></div>
         </div>
         <div class="card" style="margin-top:14px">
+          <h3 style="margin:0 0 8px">💾 كود النسخة الاحتياطية</h3>
+          <p style="margin:0 0 12px">الكود ده بيجمع تقدّم طفلكم كله في كود واحد قصير: الدروس اللي خلّصها في كل الصفوف، ومجموع نجومه، وشاراته، وسلسلة أيام التعلّم، والصف المختار، ولقبه، وسجلات تحدي الأسبوع. انسخوه واحتفظوا بيه عندكم (على ورقة أو في رسالة واتساب)، ولو غيّرتوا الموبايل أو المتصفح، الصقوه هنا على الجهاز الجديد فيرجع التقدّم — وبيتدمج مع أي تقدّم موجود على الجهاز ده، وعمره ما يمسح حاجة.</p>
+          <button class="btn" type="button" id="genBackupBtn">📋 انسخ كود تقدّم طفلك</button>
+          <p class="tch-note" style="margin:8px 0 0">الكود ده فيه تقدّم طفلك بس، وبيتنسخ لما إنت تقرر</p>
+          <div id="backupCodeWrap" hidden style="margin-top:12px">
+            <input class="code-box" id="backupCodeOut" type="text" readonly aria-label="كود النسخة الاحتياطية" style="direction:ltr;text-align:left" />
+            <div style="margin-top:10px">
+              <button class="btn ghost" type="button" id="copyBackupBtn">📋 انسخ الكود</button>
+            </div>
+            <p class="tch-note" style="margin:8px 0 0">الكود لحظي: لو التقدّم اتغيّر بعد كده، اعملوا كود جديد.</p>
+          </div>
+          <div style="margin-top:18px;border-top:2px dashed var(--line);padding-top:14px">
+            <div class="tch-field">
+              <label for="backupCodeIn">استعد تقدّمك بكود</label>
+              <input class="tch-input" id="backupCodeIn" type="text" autocomplete="off" placeholder="SKLB-...." style="direction:ltr;text-align:left" />
+            </div>
+            <div style="margin-top:10px">
+              <button class="btn" type="button" id="restoreBackupBtn">♻️ استعادة التقدّم</button>
+            </div>
+            <div class="tch-error" id="backupError" role="alert"></div>
+            <p id="backupOk" role="status" style="margin:0;font-weight:800;color:var(--brand)"></p>
+          </div>
+          <p class="tch-note" style="margin:12px 0 0">🔒 الخصوصية: الكود فيه التقدّم واللقب بس — مفيش اسم حقيقي ولا أي بيانات شخصية، ومفيش أي حاجة بتتبعت لأي مكان؛ إنتوا بس اللي بتنسخوه وتبعتوه بنفسكم لو حبيتوا.</p>
+        </div>
+        <div class="card" style="margin-top:14px">
           <h3 style="margin:0 0 8px">🏆 شهادات الإنجاز</h3>
           <p style="margin:0 0 12px">كل وحدة بيخلّصها البطل بالكامل ليها شهادة إنجاز جاهزة للطباعة باسمه المستعار — احتفال صغير يفرّحه ويشجّعه يكمّل.</p>
           <div class="tch-grid c2">
@@ -9251,6 +9276,309 @@ function computeClassStats(students) {
   renderTeacherAll();
 })();
 
+</script>
+<script>
+"use strict";
+/* ============================================================
+   💾 كود النسخة الاحتياطية (SKLB-…) — ركن ولي الأمر
+   كود واحد قصير فيه تقدّم الطفل كله: الدروس المنجزة (قناع بتّات
+   على ترتيب الدروس الكلي)، مجموع النجوم، الشارات، السلسلة، الصف
+   المختار، اللقب، وسجلات تحدي الأسبوع + شاراته. من غير حساب ولا
+   سيرفر: ولي الأمر بينسخ الكود بنفسه ويلصقه بنفسه على أي جهاز،
+   والاستعادة بتدمج مع تقدّم الجهاز وعمرها ما تمسح حاجة.
+   ============================================================ */
+
+/*BKCODEC-START*/
+/* تشفير/فك كود النسخة الاحتياطية + الدمج — دوال نقية بلا أي اعتماد على الصفحة
+   (بتستخدم نفس أدوات Base32 والبصمة بتاعة أكواد المدرسين فوق).
+   الصيغة (إصدار ١): [1, صف, نجوم×2, سلسلة حالية×2, أفضل سلسلة×2, آخر يوم سلسلة×2,
+   طول قناع الشارات, قناع الشارات…, طول قناع الدروس, قناع الدروس…,
+   عدد شارات الأسبوع, (سنة-2020, رقم الأسبوع)…, عدد سجلات تحدي الأسبوع,
+   (صف, سنة-2020, أسبوع, نتيجة, مجموع)…, طول اللقب, اللقب…, بصمة] */
+var SKLB_EPOCH = 18262; /* أيام 2020-01-01 من بداية التوقيت */
+function sklbDayNum(y, m, d) { return Math.floor(Date.UTC(y, m - 1, d) / 86400000); }
+function sklbParseDay(s) {
+  var p = String(s || "").split("-");
+  if (p.length !== 3) return -1;
+  var y = +p[0], m = +p[1], d = +p[2];
+  if (!y || !m || !d || m < 1 || m > 12 || d < 1 || d > 31) return -1;
+  return sklbDayNum(y, m, d);
+}
+function sklbDayStr(days) {
+  if (days == null || days < 0) return "";
+  var dt = new Date(days * 86400000);
+  return dt.getUTCFullYear() + "-" + (dt.getUTCMonth() + 1) + "-" + dt.getUTCDate();
+}
+function sklbWeekKey(year, week) { return year + "-W" + week; }
+function sklbParseWeekKey(k) {
+  var m = /^(\d{4})-W(\d{1,2})$/.exec(String(k || ""));
+  if (!m) return null;
+  var y = +m[1], w = +m[2];
+  if (w < 1 || w > 53 || y < 2020 || y > 2275) return null;
+  return { year: y, week: w };
+}
+function encodeBackupCode(d, lessonIds, badgeIds) {
+  var idx = {}, i;
+  lessonIds.forEach(function (id, j) { idx[id] = j; });
+  var maskLen = Math.ceil(lessonIds.length / 8), mask = [];
+  for (i = 0; i < maskLen; i++) mask.push(0);
+  (d.doneIds || []).forEach(function (id) {
+    var p = idx[id];
+    if (p != null) mask[p >> 3] |= (1 << (p & 7));
+  });
+  while (mask.length && mask[mask.length - 1] === 0) mask.pop();
+  var bMaskLen = Math.ceil(badgeIds.length / 8), bMask = [];
+  for (i = 0; i < bMaskLen; i++) bMask.push(0);
+  (d.badgeIds || []).forEach(function (id) {
+    var p = badgeIds.indexOf(id);
+    if (p >= 0) bMask[p >> 3] |= (1 << (p & 7));
+  });
+  var stars = Math.max(0, Math.min(65535, d.stars | 0));
+  var sc = Math.max(0, Math.min(65535, d.streakCount | 0));
+  var sb = Math.max(0, Math.min(65535, d.streakBest | 0));
+  var lastN = sklbParseDay(d.streakLast), lastEnc = 65535;
+  if (lastN >= 0) { var rel = lastN - SKLB_EPOCH; if (rel >= 0 && rel < 65535) lastEnc = rel; }
+  var b = [1, Math.max(0, Math.min(6, d.grade | 0)),
+    (stars >> 8) & 255, stars & 255, (sc >> 8) & 255, sc & 255, (sb >> 8) & 255, sb & 255,
+    (lastEnc >> 8) & 255, lastEnc & 255];
+  b.push(bMask.length); b = b.concat(bMask);
+  b.push(mask.length); b = b.concat(mask);
+  var wb = (d.weeklyBadges || []).filter(function (w) { return w && w.year >= 2020 && w.year <= 2275 && w.week >= 1 && w.week <= 53; })
+    .sort(function (a, c) { return (c.year - a.year) || (c.week - a.week); }).slice(0, 16);
+  b.push(wb.length);
+  wb.forEach(function (w) { b.push(w.year - 2020, w.week); });
+  var wr = (d.weekly || []).filter(function (r) { return r && r.grade >= 1 && r.grade <= 6 && r.year >= 2020 && r.year <= 2275 && r.week >= 1 && r.week <= 53; }).slice(0, 6);
+  b.push(wr.length);
+  wr.forEach(function (r) {
+    b.push(r.grade, r.year - 2020, r.week, Math.max(0, Math.min(255, r.score | 0)), Math.max(0, Math.min(255, r.total | 0)));
+  });
+  var nick = sklUtf8Bytes(String(d.nick || "").slice(0, 18)).slice(0, 36);
+  b.push(nick.length); b = b.concat(nick);
+  b.push(sklChecksum(b));
+  return "SKLB-" + sklGroup(sklB32Encode(b));
+}
+function decodeBackupCode(str, lessonIds, badgeIds) {
+  var s = String(str || "").trim().toUpperCase();
+  if (s.indexOf("SKLB") !== 0) return null;
+  var b = sklB32Decode(s.slice(4));
+  if (b.length < 15) return null;
+  if (b[0] !== 1) return null;
+  if (sklChecksum(b.slice(0, b.length - 1)) !== b[b.length - 1]) return null;
+  var grade = b[1];
+  if (grade > 6) return null;
+  var end = b.length - 1, p = 10, i, bit;
+  if (p >= end) return null;
+  var bMaskLen = b[p]; p += 1;
+  if (bMaskLen > 8 || p + bMaskLen > end) return null;
+  var bMask = b.slice(p, p + bMaskLen); p += bMaskLen;
+  var badgeOut = [];
+  bMask.forEach(function (byte, bi) {
+    for (bit = 0; bit < 8; bit++) {
+      if (byte & (1 << bit)) { var bi2 = bi * 8 + bit; if (bi2 < badgeIds.length) badgeOut.push(badgeIds[bi2]); }
+    }
+  });
+  if (p >= end) return null;
+  var maskLen = b[p]; p += 1;
+  var maxMask = Math.ceil(lessonIds.length / 8);
+  if (maskLen > maxMask || p + maskLen > end) return null;
+  var mask = b.slice(p, p + maskLen); p += maskLen;
+  var doneIds = [];
+  mask.forEach(function (byte, bi) {
+    for (bit = 0; bit < 8; bit++) {
+      if (byte & (1 << bit)) { var li = bi * 8 + bit; if (li < lessonIds.length) doneIds.push(lessonIds[li]); }
+    }
+  });
+  if (p >= end) return null;
+  var wbCount = b[p]; p += 1;
+  if (wbCount > 16 || p + wbCount * 2 > end) return null;
+  var weeklyBadges = [];
+  for (i = 0; i < wbCount; i++) {
+    var wk = b[p + 1];
+    if (wk < 1 || wk > 53) return null;
+    weeklyBadges.push({ year: b[p] + 2020, week: wk }); p += 2;
+  }
+  if (p >= end) return null;
+  var wrCount = b[p]; p += 1;
+  if (wrCount > 6 || p + wrCount * 5 > end) return null;
+  var weekly = [];
+  for (i = 0; i < wrCount; i++) {
+    var r = { grade: b[p], year: b[p + 1] + 2020, week: b[p + 2], score: b[p + 3], total: b[p + 4] };
+    if (r.grade < 1 || r.grade > 6 || r.week < 1 || r.week > 53 || r.score > r.total) return null;
+    weekly.push(r); p += 5;
+  }
+  if (p >= end) return null;
+  var nickLen = b[p]; p += 1;
+  if (nickLen > 36 || p + nickLen !== end) return null;
+  var nick = sklUtf8String(b.slice(p, p + nickLen));
+  var lastEnc = (b[8] << 8) | b[9];
+  return {
+    grade: grade,
+    stars: (b[2] << 8) | b[3],
+    streakCount: (b[4] << 8) | b[5],
+    streakBest: (b[6] << 8) | b[7],
+    streakLast: lastEnc === 65535 ? "" : sklbDayStr(SKLB_EPOCH + lastEnc),
+    badgeIds: badgeOut,
+    doneIds: doneIds,
+    weeklyBadges: weeklyBadges,
+    weekly: weekly,
+    nick: nick
+  };
+}
+/* دمج كود مستعاد في مخزن الجهاز: اتحاد الدروس المنجزة، والأعلى من النجوم
+   والسلسلة، واتحاد الشارات وسجلات الأسبوع — لا يمسح أي تقدّم موجود أبدًا.
+   lessonsMeta: [{id, n: عدد التمارين, g: الصف}] بترتيب الدروس نفسه. */
+function mergeBackupData(st, d, lessonsMeta) {
+  st.stars = st.stars || {}; st.lessonsDone = st.lessonsDone || {};
+  st.streak = st.streak || { last: "", count: 0, best: 0 };
+  st.seenBadges = st.seenBadges || {}; st.weeklyBadges = st.weeklyBadges || {}; st.weeklyByGrade = st.weeklyByGrade || {};
+  var byId = {};
+  lessonsMeta.forEach(function (m) { byId[m.id] = m; });
+  var addedLessons = 0;
+  (d.doneIds || []).forEach(function (id) {
+    if (byId[id] && !st.lessonsDone[id]) { st.lessonsDone[id] = 1; addedLessons++; }
+  });
+  /* الدرس المنجز في الاسكولز يعني كل تمارينه اتحلت — نجوم تمارينه بتتكمل معاه */
+  (d.doneIds || []).forEach(function (id) {
+    var m = byId[id]; if (!m) return;
+    for (var i = 0; i < m.n; i++) { var k = id + ":" + i; if (!st.stars[k]) st.stars[k] = 1; }
+  });
+  /* مجموع النجوم: الأعلى بين الجهاز والكود — الزيادة بتتوزع على تمارين لسه
+     مخدتش نجوم (من غير ما نكمّل درس جديد في أول محاولة) */
+  var total = Object.keys(st.stars).length;
+  if (total < (d.stars | 0)) {
+    var need = (d.stars | 0) - total;
+    var ordered = lessonsMeta.slice().sort(function (a, c) {
+      return ((a.g === d.grade) ? 0 : 1) - ((c.g === d.grade) ? 0 : 1);
+    });
+    for (var pass = 0; pass < 2 && need > 0; pass++) {
+      for (var li = 0; li < ordered.length && need > 0; li++) {
+        var m2 = ordered[li];
+        if (st.lessonsDone[m2.id]) continue;
+        var have = 0, j;
+        for (j = 0; j < m2.n; j++) if (st.stars[m2.id + ":" + j]) have++;
+        var cap = pass === 0 ? m2.n - 1 : m2.n;
+        for (j = 0; j < m2.n && have < cap && need > 0; j++) {
+          var k2 = m2.id + ":" + j;
+          if (!st.stars[k2]) { st.stars[k2] = 1; have++; need--; }
+        }
+      }
+    }
+  }
+  var sc = Math.max(st.streak.count || 0, d.streakCount || 0);
+  var sb = Math.max(st.streak.best || 0, d.streakBest || 0, sc);
+  st.streak.count = sc; st.streak.best = sb;
+  var dLast = sklbParseDay(d.streakLast), lLast = sklbParseDay(st.streak.last);
+  if (dLast >= 0 && dLast > lLast) st.streak.last = d.streakLast;
+  if (!st.gradePicked && d.grade >= 1 && d.grade <= 6) { st.grade = d.grade; st.gradePicked = true; }
+  if (!st.kidName && d.nick) st.kidName = d.nick;
+  (d.badgeIds || []).forEach(function (id) { st.seenBadges[id] = 1; });
+  (d.weeklyBadges || []).forEach(function (w) { st.weeklyBadges[sklbWeekKey(w.year, w.week)] = 1; });
+  (d.weekly || []).forEach(function (r) {
+    var cur = st.weeklyByGrade[r.grade];
+    var take = !cur;
+    if (cur) {
+      var cp = sklbParseWeekKey(cur.key);
+      if (!cp || r.year > cp.year || (r.year === cp.year && r.week > cp.week)) take = true;
+      else if (r.year === cp.year && r.week === cp.week && (r.score | 0) > (cur.score | 0)) take = true;
+    }
+    if (take) st.weeklyByGrade[r.grade] = { key: sklbWeekKey(r.year, r.week), grade: r.grade, score: r.score, total: r.total, ts: Date.now() };
+  });
+  return { addedLessons: addedLessons, stars: Object.keys(st.stars).length };
+}
+/*BKCODEC-END*/
+
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  try { if (typeof store !== "object" || !store || typeof LESSONS === "undefined") return; } catch (e) { return; }
+
+  var LESSON_IDS = LESSONS.map(function (l) { return l.id; });
+  /* نفس ترتيب شارات الموقع بالظبط (قائمة BADGES) — القناع بيتبني عليها */
+  var BADGE_IDS = ["first-star", "ten-stars", "thirty-stars", "first-lesson", "subject-hero", "all-subjects", "challenge", "voice-star", "speaker", "streak3", "streak7"];
+  var META = LESSONS.map(function (l) { return { id: l.id, n: l.exercises.length, g: gradeOf(l) }; });
+
+  function lessonDoneNow(l) {
+    if ((store.lessonsDone || {})[l.id]) return true;
+    if (!l.exercises.length) return false;
+    for (var i = 0; i < l.exercises.length; i++) if (!store.stars[l.id + ":" + i]) return false;
+    return true;
+  }
+  function collectBackup() {
+    var doneIds = [];
+    LESSONS.forEach(function (l) { if (lessonDoneNow(l)) doneIds.push(l.id); });
+    /* الشارات المكسبوبة فعلًا محفوظة في seenBadges (بتتعلّم عند الكسب وعند كل بداية) */
+    var earned = BADGE_IDS.filter(function (id) { return (store.seenBadges || {})[id]; });
+    var wb = [];
+    Object.keys(store.weeklyBadges || {}).forEach(function (k) {
+      var w = sklbParseWeekKey(k); if (w) wb.push(w);
+    });
+    var weekly = [];
+    Object.keys(store.weeklyByGrade || {}).forEach(function (g) {
+      var r = store.weeklyByGrade[g]; if (!r) return;
+      var w = sklbParseWeekKey(r.key); if (!w) return;
+      weekly.push({ grade: r.grade || +g, year: w.year, week: w.week, score: r.score | 0, total: r.total | 0 });
+    });
+    var g = (store.grade >= 1 && store.grade <= 6) ? store.grade : 0;
+    try { if (!g && typeof curGrade === "number") g = curGrade; } catch (e) {}
+    return {
+      grade: g || 0,
+      stars: starTotal(),
+      streakCount: (store.streak && store.streak.count) || 0,
+      streakBest: (store.streak && store.streak.best) || 0,
+      streakLast: (store.streak && store.streak.last) || "",
+      badgeIds: earned,
+      doneIds: doneIds,
+      weeklyBadges: wb,
+      weekly: weekly,
+      nick: store.kidName || ""
+    };
+  }
+  function copyBackupText(txt, done) {
+    function fallback() {
+      var out = $("backupCodeOut");
+      if (out) { out.focus(); out.select(); }
+      try { document.execCommand("copy"); } catch (e) {}
+      if (done) done();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(function () { if (done) done(); }, fallback);
+    } else fallback();
+  }
+  var genBtn = $("genBackupBtn");
+  if (genBtn) genBtn.addEventListener("click", function () {
+    var code = encodeBackupCode(collectBackup(), LESSON_IDS, BADGE_IDS);
+    var out = $("backupCodeOut");
+    if (out) out.value = code;
+    if ($("backupCodeWrap")) $("backupCodeWrap").hidden = false;
+    var err = $("backupError"); if (err) err.textContent = "";
+    var ok = $("backupOk"); if (ok) ok.textContent = "";
+    copyBackupText(code, function () { toast("📋 اتنسخ كود تقدّم طفلك — احتفظوا بيه في مكان آمن"); });
+  });
+  var cpBtn = $("copyBackupBtn");
+  if (cpBtn) cpBtn.addEventListener("click", function () {
+    var out = $("backupCodeOut");
+    if (out && out.value) copyBackupText(out.value, function () { toast("📋 اتنسخ الكود"); });
+  });
+  var rsBtn = $("restoreBackupBtn");
+  if (rsBtn) rsBtn.addEventListener("click", function () {
+    var err = $("backupError"), ok = $("backupOk");
+    var inp = $("backupCodeIn");
+    var d = decodeBackupCode(inp ? inp.value : "", LESSON_IDS, BADGE_IDS);
+    if (!d) {
+      if (err) err.textContent = "الكود ده مش مظبوط، اتأكد منه — لازم يبدأ بـ SKLB ويكون منسوخ كامل، من غير ما ينقص أو يتغيّر منه حرف.";
+      if (ok) ok.textContent = "";
+      return;
+    }
+    if (err) err.textContent = "";
+    var res = mergeBackupData(store, d, META);
+    save();
+    try { refreshStars(); } catch (e) {}
+    var sn = $("streakNum");
+    if (sn) sn.textContent = toAr(store.streak.count || 0);
+    if (ok) ok.textContent = "✔ اتم الاستعادة والدمج بنجاح! التقدّم على الجهاز دلوقتي: " + toAr(Object.keys(store.lessonsDone || {}).length) + " درس منجز و" + toAr(res.stars) + " نجمة — ومفيش أي تقدّم كان موجود هنا اتمسح. (تقرير ولي الأمر اللي فوق هيتحدّث لما تفتحوا الركن من جديد.)";
+    toast("💾 رجع تقدّم طفلك واتدمج مع اللي على الجهاز");
+    if (inp) inp.value = "";
+  });
+})();
 </script>
 <style>
   /* ===== إضافات: لقب البطل + خريطة الرئيسية + تحدي الأسبوع ===== */
