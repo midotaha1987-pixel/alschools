@@ -1,4 +1,4 @@
-const CACHE = 'lskwlz-v34';
+const CACHE = 'lskwlz-v35';
 const ASSETS = ['./', './index.html', './manifest.json', './logo-icon-192.png', './logo-icon-512.png', './logo-icon-maskable-512.png', './runner.html'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));

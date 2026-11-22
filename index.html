@@ -973,6 +973,11 @@
         </div>
         <p class="sec-sub">كل أرقام التقرير دي محسوبة من تقدم طفلكم المحفوظ على الجهاز ده بس — مش بتتبعت لأي مكان.</p>
         <div id="parentReport"></div>
+        <div class="card" style="margin-top:14px">
+          <h3 style="margin:0 0 8px">🛠️ سجل تشخيص مكافأة الجري (للمطوّر)</h3>
+          <p style="margin:0 0 8px">هنا بيتسجّل كل اللي بيحصل مع مكافأة لعبة الجري (اتضبطت، اتلغت، اتفتحت، اتمنعت وليه) — عشان لو المكافأة ما ظهرتش نعرف السبب بالظبط.</p>
+          <pre id="runnerDebugLog" style="margin:0;white-space:pre-wrap;word-break:break-word;background:var(--bg2);border:1.5px solid var(--line);border-radius:12px;padding:10px;font-size:13px;line-height:1.7;min-height:44px" dir="rtl">لسه مفيش أحداث مسجّلة.</pre>
+        </div>
         <div class="card" id="voiceSettingsCard" style="margin-top:14px">
           <h3 style="margin:0 0 8px">🔊 إعدادات صوت المعلم</h3>
           <p class="vstate" id="voiceStateParent" role="status" style="margin:0 0 8px">صوت المعلم جاهز — دوس «اسمع الدرس» في أي درس عشان تسمعه.</p>
@@ -1391,7 +1396,7 @@
         <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5356390506906623" data-ad-format="auto" data-full-width-responsive="true"></ins>
         <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
       </div>
-      <p style="margin:10px 0 0;font-size:13px;font-weight:700;opacity:.7">الإصدار ٣٤</p>
+      <p style="margin:10px 0 0;font-size:13px;font-weight:700;opacity:.7">الإصدار ٣٥</p>
     </footer>
     <!-- ================= الدرس الصوتي الكامل ================= -->
     <div class="audio-overlay" id="audioOverlay" hidden role="dialog" aria-label="الدرس الصوتي مع المعلم">
@@ -5646,7 +5651,7 @@ CHALLENGES["g6_english"] = [
 "use strict";
 /* ================= الحالة والتخزين ================= */
 const LS_KEY = "elschoolz_v1";
-window.__LSKWLZ_VERSION = "v34";
+window.__LSKWLZ_VERSION = "v35";
 let store = { stars:{}, chat:[], missed:{} };
 try { const s = JSON.parse(localStorage.getItem(LS_KEY) || "null"); if (s && typeof s === "object") store = Object.assign(store, s); } catch(e){}
 function save(){ try { localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch(e){} }
@@ -5703,13 +5708,25 @@ function speak(text, lang){
 }
 if ("speechSynthesis" in window) { try { speechSynthesis.getVoices(); } catch(e){} }
 
+/* ================= سجل تشخيص مكافأة الجري (v35: عشان نعرف من الفحص الحي بالظبط إيه اللي حصل) ================= */
+window.__runnerLog = [];
+function rlog(msg){
+  try {
+    var line = new Date().toLocaleTimeString("ar-EG") + " — " + msg;
+    window.__runnerLog.push(line);
+    if (window.__runnerLog.length > 40) window.__runnerLog.shift();
+    var el = document.getElementById("runnerDebugLog");
+    if (el) el.textContent = window.__runnerLog.join("\n");
+  } catch(e){}
+}
+
 /* ================= مكافأة لعبة الجري (بعد إكمال تمارين الدرس) ================= */
 function showRunnerReward(lessonId){
   try {
-    if (!curLesson) return;
+    if (!curLesson) { rlog("المكافأة اتمنعت: مفيش درس مفتوح"); return; }
     /* المكافأة تتفتح بس والطفل لسه في نفس الدرس اللي خلّصه — لو اتنقّل لصفحة تانية، المؤقت ده يتلغي بصمت */
-    if (lessonId && curLesson.id !== lessonId) return;
-    if (document.getElementById("view-lesson").hidden) return;
+    if (lessonId && curLesson.id !== lessonId) { rlog("المكافأة اتمنعت: الدرس اتغيّر (" + curLesson.id + " ≠ " + lessonId + ")"); return; }
+    if (document.getElementById("view-lesson").hidden) { rlog("المكافأة اتمنعت: شاشة الدرس مخفية"); return; }
     var ov = document.getElementById("runnerOverlay");
     var fr = document.getElementById("runnerFrame");
     if (!ov || !fr) return;
@@ -5719,6 +5736,7 @@ function showRunnerReward(lessonId){
     try { window.__runnerTimer = null; } catch(e){}
     fr.src = "runner.html?lesson=" + encodeURIComponent(curLesson.id) + "&title=" + encodeURIComponent(curLesson.title);
     ov.hidden = false;
+    rlog("المكافأة اتفتحت: " + curLesson.id);
     document.body.style.overflow = "hidden";
     try { speak("مبروك يا بطل! خلصت تمارين الدرس كله! يلا نلعب لعبة الجري!"); } catch(e){}
   } catch(e){}
@@ -5747,9 +5765,11 @@ window.addEventListener("message", function(ev){
 const VIEWS = ["view-home","view-subject","view-lesson","view-challenge","view-chat"];
 function show(id){
   /* v32: الغي مؤقّت المكافأة بس عند مغادرة شاشة الدرس — إعادة عرض نفس الدرس (نفس الهاش/إعادة فتح اللينك) ما تلغيهاش، الطفل لسه في الدرس */
-  try { if (id !== "view-lesson" && window.__runnerTimer) { clearTimeout(window.__runnerTimer); window.__runnerTimer = null; } } catch(e){}
+  try { if (id !== "view-lesson" && window.__runnerTimer) { rlog("المؤقّت اتلغى: مغادرة لشاشة " + id); clearTimeout(window.__runnerTimer); window.__runnerTimer = null; } } catch(e){}
   /* v34: مغادرة الدرس بتلغي المكافأة المعلّقة برضه — عشان ما تطلعش متأخرة على الرئيسية */
-  try { if (id !== "view-lesson" && store.runnerPending) { delete store.runnerPending; save(); } } catch(e){}
+  try { if (id !== "view-lesson" && store.runnerPending) { rlog("العلامة المعلّقة اتمسحت: مغادرة لشاشة " + id); delete store.runnerPending; save(); } } catch(e){}
+  /* v35: دخول شاشة الدرس ولسه فيه مكافأة معلّقة للدرس ده — أعد ضبط المؤقّت (بيغطي حالة ما بعد التحديث وحالة ما اتمنعت مرة) */
+  try { if (id === "view-lesson" && store.runnerPending && curLesson && store.runnerPending === curLesson.id && !window.__runnerTimer) { var _pr2 = curLesson.id; rlog("إعادة ضبط المؤقّت من show(): " + _pr2); window.__runnerTimer = setTimeout(function(){ if (typeof showRunnerReward === "function") showRunnerReward(_pr2); }, 1200); } } catch(e){}
   VIEWS.forEach(v => { document.getElementById(v).hidden = v !== id; });
   try { clearTimeout(toastTimer); document.getElementById("toast").classList.remove("show"); } catch(e){}
   try { if (typeof window.__stopConfetti === "function") window.__stopConfetti(); } catch(e){}
@@ -5855,8 +5875,8 @@ function openLesson(id){
   document.getElementById("lessonTitle").textContent = curLesson.title;
   document.getElementById("exerciseZone").hidden = true;
   renderStep(); show("view-lesson");
-  /* v34: الدرس ده اتخلّص ومكافأته لسه ما اتفتحتش (مثلًا الصفحة اتعملها تحديث بعد الإكمال) — أعد ضبط مؤقّت المكافأة */
-  try { if (store.runnerPending === id && store.lessonsDone && store.lessonsDone[id] && !window.__runnerTimer) { var _pr = id; window.__runnerTimer = setTimeout(function(){ if (typeof showRunnerReward === "function") showRunnerReward(_pr); }, 1200); } } catch(e){}
+  /* v35: الدرس ده اتخلّص ومكافأته لسه ما اتفتحتش (مثلًا الصفحة اتعملها تحديث بعد الإكمال) — أعد ضبط مؤقّت المكافأة (من غير شرط lessonsDone: العلامة نفسها كفاية، والدرس ممكن يكون اتخلّص قبل ما checkLessonDone يلحق يسجّله) */
+  try { if (store.runnerPending === id && !window.__runnerTimer) { var _pr = id; rlog("إعادة ضبط المؤقّت من openLesson(): " + _pr); window.__runnerTimer = setTimeout(function(){ if (typeof showRunnerReward === "function") showRunnerReward(_pr); }, 1200); } } catch(e){}
 }
 document.getElementById("lessonBack").addEventListener("click", () => openSubject(curLesson.subject));
 document.getElementById("lessonDoneBack").addEventListener("click", () => openSubject(curLesson.subject));
@@ -6120,6 +6140,15 @@ function buildExercise(id, ex){
     } else {
       showFb(true, praiseFor() + " صححتها خلاص 👏<br />" + W(ex.why) + "<br />بس النجمة للإجابة الصح من أول مرة — السؤال ده اتحل من غير نجمة. جرّب تكسب نجمة السؤال اللي بعده!");
     }
+    /* v35: لو ده كان آخر سؤال في الدرس — علّم المكافأة معلّقة فورًا وبشكل متزامن (في نفس مهمة الضغطة)، عشان تحديث الصفحة ما يلحقش يضيّعها قبل ما checkLessonDone يشتغل (120ms) */
+    try {
+      var _vl = document.getElementById("view-lesson");
+      if (typeof curLesson !== "undefined" && curLesson && _vl && !_vl.hidden && !store.lessonsDone[curLesson.id]) {
+        var _cards = document.querySelectorAll("#exerciseList .ex-card");
+        var _all = _cards.length && Array.prototype.every.call(_cards, function(c){ return c.classList.contains("solved"); });
+        if (_all) { store.runnerPending = curLesson.id; save(); rlog("العلامة اتسجّلت متزامن عند آخر سؤال: " + curLesson.id); }
+      }
+    } catch(e){}
   }
   if (ex.type === "dict") card.querySelector(".listen-btn").addEventListener("click", () => speak(ex.word, ex.lang));
   if (ex.type === "choice" || ex.type === "dict"){
@@ -7668,6 +7697,7 @@ refreshStars();
         /* v34: علّم إن مكافأة الدرس ده لسه ما اتفتحتش — لو الصفحة اتعملها تحديث أو اتعاد فتح الدرس، المكافأة تتفتح برضه (وتتلغي بس لو الطفل ساب الدرس) */
         try { store.runnerPending = curLesson.id; save(); } catch(e){}
         window.__runnerTimer = setTimeout(function(){ if (typeof showRunnerReward === "function") showRunnerReward(_rid); }, 1200);
+        rlog("الدرس اكتمل (checkLessonDone): " + curLesson.id + " — المؤقّت اتضبط");
       }
     } catch (e) {}
   }
@@ -9908,7 +9938,8 @@ function mergeBackupData(st, d, lessonsMeta) {
   if (resetBtn) resetBtn.addEventListener("click", function(){
     if (resetBtn.dataset.armed) {
       try { localStorage.removeItem(LS_KEY); } catch(e){}
-      try { localStorage.removeItem(CHOICE_KEY); } catch(e){}
+      /* v35: CHOICE_KEY متعرفة جوه IIFE تانية فمش في النطاق هنا — استخدم المفتاح نفسه حرفيًا (كان المسح بيفشل بصمت فالبطاقة ما كانتش بتظهر بعد المسح) */
+      try { localStorage.removeItem("elschoolz_choice_v1"); } catch(e){}
       location.reload();
       return;
     }
