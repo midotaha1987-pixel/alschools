@@ -676,9 +676,17 @@
     </header>
 
     <main class="wrap">
+      <!-- مكافأة لعبة الجري (v36): بنت مباشرة لـ main — خارج كل أقسام view-* عشان تظهر فوق أي شاشة (درس/رئيسية)، ولازم تبقى قبل السكربتات عشان زرار الإغلاق يتوصّل عند التحميل. كانت جوه #view-home فمكانتش بتظهر وانت في الدرس -->
+      <div class="runner-overlay" id="runnerOverlay" hidden>
+        <div class="runner-top">
+          <span class="runner-title">🎉 مبروك يا بطل! دي مكافأتك — لعبة الجري 🏃‍♂️</span>
+          <button class="runner-close" type="button" id="runnerClose" aria-label="رجوع للدرس">✕</button>
+        </div>
+        <iframe id="runnerFrame" title="لعبة الجري — مكافأة الأبطال" allow="autoplay"></iframe>
+      </div>
       <!-- ================= HOME ================= -->
       <section id="view-home">
-        <!-- مكافأة لعبة الجري: نُقلت لآخر الصفحة (خارج كل الأقسام) في v36 — كانت جوه #view-home فمكانتش بتظهر وانت في الدرس -->
+        <!-- مكافأة لعبة الجري: نُقلت لأول main في v36 — كانت جوه #view-home فمكانتش بتظهر وانت في الدرس -->
         <!-- بطاقة الاختيار: صفحة ولا تطبيق؟ (تظهر مرة واحدة للزائر الجديد) -->
         <div class="choice-card" id="choiceCard" hidden>
           <button class="choice-close" type="button" id="choiceClose" aria-label="إغلاق">✕</button>
@@ -11442,13 +11450,5 @@ if (tDue) tDue.addEventListener("change", function(){
   tDueTxt.textContent = v ? ("التاريخ المختار: " + formatArDate(new Date(v + "T12:00:00"), true)) : "";
 });
 </script>
-<!-- مكافأة لعبة الجري (v36): خارج كل أقسام العرض — لازم تبقى بنت مباشرة لـ body عشان تظهر فوق أي شاشة (درس/رئيسية)، مش جوه #view-home اللي بيتخفي وانت في الدرس -->
-<div class="runner-overlay" id="runnerOverlay" hidden>
-  <div class="runner-top">
-    <span class="runner-title">🎉 مبروك يا بطل! دي مكافأتك — لعبة الجري 🏃‍♂️</span>
-    <button class="runner-close" type="button" id="runnerClose" aria-label="رجوع للدرس">✕</button>
-  </div>
-  <iframe id="runnerFrame" title="لعبة الجري — مكافأة الأبطال" allow="autoplay"></iframe>
-</div>
 </body>
 </html>
