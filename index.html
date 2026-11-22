@@ -5734,8 +5734,8 @@ window.addEventListener("message", function(ev){
 /* ================= التنقل بين الشاشات ================= */
 const VIEWS = ["view-home","view-subject","view-lesson","view-challenge","view-chat"];
 function show(id){
-  /* لو الطفل اتنقّل قبل ما مؤقت المكافأة يضرب، الغيه — المكافأة متتفتحش متأخرة على صفحة تانية */
-  try { if (window.__runnerTimer) { clearTimeout(window.__runnerTimer); window.__runnerTimer = null; } } catch(e){}
+  /* v32: الغي مؤقّت المكافأة بس عند مغادرة شاشة الدرس — إعادة عرض نفس الدرس (نفس الهاش/إعادة فتح اللينك) ما تلغيهاش، الطفل لسه في الدرس */
+  try { if (id !== "view-lesson" && window.__runnerTimer) { clearTimeout(window.__runnerTimer); window.__runnerTimer = null; } } catch(e){}
   VIEWS.forEach(v => { document.getElementById(v).hidden = v !== id; });
   try { clearTimeout(toastTimer); document.getElementById("toast").classList.remove("show"); } catch(e){}
   try { if (typeof window.__stopConfetti === "function") window.__stopConfetti(); } catch(e){}
@@ -6516,6 +6516,8 @@ refreshStars();
     var gp = document.getElementById("gradePickOverlay");
     var choiceShown = false;
     var tryShowChoice = function(){
+      /* v32: استنى سكربت اختيار الصف يخلّص قراره الأول — قبلها النافذة لسه hidden في الـHTML فالبطاقة كانت بتظهر بدري وتتحرق choiceShown ومتظهرش تاني أبدًا */
+      if (typeof window.__gradePickTest === "undefined") return;
       /* طبقة واحدة بس في المرة: لو نافذة اختيار الصف مفتوحة، البطاقة تستنى (وتتخفي لو كانت ظهرت قبلها) */
       if (gp && !gp.hidden) { hideCard(); return; }
       if (choiceShown) return;
